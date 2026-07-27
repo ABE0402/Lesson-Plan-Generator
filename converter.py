@@ -185,20 +185,26 @@ def extract_wp_quizzes(html: str) -> list[dict[str, Any]]:
 
 
 def extract_blocks_from_html(html: str) -> list[Block]:
+    """본문 DOM 순서대로 text/image/h5p 블록을 뽑는다."""
     root = extract_main_soup(html)
     blocks: list[Block] = []
 
-    for hid in extract_h5p_ids(html):
-        blocks.append(
-            Block(
-                type="h5p",
-                src=f"https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id={hid}",
-                text=f"인터랙티브 콘텐츠 #{hid}",
-            )
-        )
-
-    for el in root.find_all(["img", "p", "li", "h1", "h2", "h3", "h4", "hr"], recursive=True):
+    for el in root.find_all(
+        ["img", "p", "li", "h1", "h2", "h3", "h4", "hr", "iframe", "strong", "b"],
+        recursive=True,
+    ):
         name = el.name.lower()
+
+        if name == "iframe":
+            src = el.get("src") or ""
+            if src.startswith("//"):
+                src = "https:" + src
+            if "h5p" not in src.lower() and "action=h5p" not in src.lower():
+                continue
+            title = clean_text(el.get("title") or "")
+            blocks.append(Block(type="h5p", src=src, text=title or "인터랙티브"))
+            continue
+
         if name == "img":
             src = el.get("src") or ""
             if src.startswith("//"):
@@ -211,6 +217,9 @@ def extract_blocks_from_html(html: str) -> list[Block]:
             except ValueError:
                 wi = 0
             if wi and wi <= 40:
+                continue
+            # 소제목 옆 작은 아이콘 제외, 교재/단어카드 컷은 살림
+            if wi and wi < 80 and "media.crayonschool" not in src:
                 continue
             if wi >= 500 or re.search(
                 r"(수정|안내|활동하기|소개하기|회상하기|평가하기|인터렉티브|교구활동)\.(jpg|png)$",
@@ -226,19 +235,46 @@ def extract_blocks_from_html(html: str) -> list[Block]:
             blocks.append(Block(type="hr"))
             continue
 
+        # strong/b 단독 소제목
+        if name in ("strong", "b"):
+            if el.find_parent(["p", "li", "h1", "h2", "h3", "h4"]):
+                continue
+            text = clean_text(el.get_text(" ", strip=True))
+            if text and not is_noise_text(text):
+                blocks.append(Block(type="heading", text=text))
+            continue
+
         text = clean_text(el.get_text(" ", strip=True))
         if is_noise_text(text):
             continue
-        # wpProQuiz 텍스트는 별도 추출
         if el.find_parent(class_=re.compile(r"wpProQuiz")):
             continue
-        blocks.append(Block(type="text", text=text))
+        # 자식에 이미 처리한 img만 있는 p는 스킵(중복 텍스트 방지 어려우니 텍스트만)
+        if name in ("h1", "h2", "h3", "h4"):
+            blocks.append(Block(type="heading", text=text))
+        else:
+            m = re.match(r"^(<[^>\n]{1,40}>)\s*(.*)$", text, re.DOTALL)
+            if m:
+                blocks.append(Block(type="heading", text=m.group(1).strip()))
+                rest = clean_text(m.group(2) or "")
+                if rest:
+                    blocks.append(Block(type="text", text=rest))
+            else:
+                blocks.append(Block(type="text", text=text))
+
+    # HTML에 iframe이 스크립트만 있고 DOM walk에 빠진 H5P 보강(순서 끝)
+    seen_h5p = {b.src for b in blocks if b.type == "h5p" and b.src}
+    for hid in extract_h5p_ids(html):
+        src = f"https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id={hid}"
+        if src not in seen_h5p:
+            blocks.append(Block(type="h5p", src=src, text=f"인터랙티브 #{hid}"))
+            seen_h5p.add(src)
 
     deduped: list[Block] = []
     seen_txt: set[str] = set()
     for b in blocks:
-        if b.type == "text":
-            if b.text in seen_txt:
+        if b.type in ("text", "heading"):
+            if not b.text or b.text in seen_txt:
                 continue
             seen_txt.add(b.text)
         if (
@@ -249,7 +285,97 @@ def extract_blocks_from_html(html: str) -> list[Block]:
         ):
             continue
         deduped.append(b)
-    return deduped[:100]
+    return deduped[:200]
+
+
+def _serialize_blocks(blocks: list[Block]) -> list[dict[str, Any]]:
+    """연속 이미지를 gallery로 묶고 JSON용 dict로 직렬화."""
+    out: list[dict[str, Any]] = []
+    img_buf: list[str] = []
+
+    def flush_imgs() -> None:
+        nonlocal img_buf
+        if not img_buf:
+            return
+        if len(img_buf) == 1:
+            out.append({"type": "image", "src": img_buf[0]})
+        else:
+            out.append({"type": "gallery", "srcs": list(img_buf)})
+        img_buf = []
+
+    for b in blocks:
+        if b.type in ("image", "banner") and b.src:
+            img_buf.append(b.src)
+            continue
+        flush_imgs()
+        if b.type == "hr":
+            out.append({"type": "divider"})
+        elif b.type == "h5p" and b.src:
+            out.append({"type": "h5p", "src": b.src, "title": b.text or "인터랙티브"})
+        elif b.type == "heading" and b.text:
+            out.append({"type": "heading", "text": b.text})
+        elif b.type == "text" and b.text:
+            out.append({"type": "text", "text": b.text})
+    flush_imgs()
+    return out
+
+
+def pages_to_block_pages(pages: list[Page]) -> list[dict[str, Any]]:
+    """토픽을 원본 블록 순서 페이지로 나눈다. heading에서 슬라이드를 쪼갠다."""
+    result: list[dict[str, Any]] = []
+
+    for page in pages:
+        serialized = _serialize_blocks(page.blocks)
+        # 퀴즈는 블록으로 추가
+        for q in page.quizzes or []:
+            serialized.append(
+                {
+                    "type": "quiz",
+                    "question": q.get("question") or "",
+                    "options": q.get("options") or [],
+                }
+            )
+
+        if not serialized:
+            continue
+
+        # heading 기준으로 슬라이드 분할 (첫 블록이 heading이 아니면 토픽 타이틀 슬라이드)
+        chunks: list[list[dict[str, Any]]] = []
+        current: list[dict[str, Any]] = []
+        for blk in serialized:
+            if blk.get("type") == "heading" and current:
+                chunks.append(current)
+                current = [blk]
+            else:
+                current.append(blk)
+        if current:
+            chunks.append(current)
+
+        for i, chunk in enumerate(chunks):
+            title = page.title or page.section
+            for blk in chunk:
+                if blk.get("type") == "heading" and blk.get("text"):
+                    t = blk["text"]
+                    title = t if len(t) <= 48 else (t[:45] + "…")
+                    break
+            if i == 0 and page.section and page.section != title:
+                kicker = page.section
+            else:
+                kicker = page.section or page.title
+            result.append(
+                {
+                    "kicker": kicker,
+                    "title": title,
+                    "kind": page.kind,
+                    "blocks": chunk,
+                }
+            )
+
+    # 번호
+    for i, p in enumerate(result, start=1):
+        p["displayName"] = f"{i:02d} {p.get('title') or p.get('kicker') or '화면'}"
+    return result
+
 
 
 def find_lesson_items(lesson_url: str, html: str) -> tuple[str, str, list[dict[str, str]]]:
@@ -987,6 +1113,7 @@ def convert_lesson(lesson_url: str) -> dict[str, Any]:
             logs.append(f"퀴즈 {len(quizzes)}문항: {it['title']}")
 
     stages = pages_to_stages(pages)
+    block_pages = pages_to_block_pages(pages)
 
     # 인트로 준비물: 전체 페이지에서 보강
     all_texts: list[str] = []
@@ -1001,17 +1128,21 @@ def convert_lesson(lesson_url: str) -> dict[str, Any]:
             break
 
     return {
+        "mode": "blocks",
         "level": course or "크레용스쿨",
         "title": title,
         "sourceUrl": lesson_url,
         "expression": "",
         "characterImages": {"intro": "", "thinking": "", "guide": ""},
         "goals": goals_from_pages(title, pages),
+        "materials": mats[:8],
+        "pages": block_pages,
         "stages": stages,
         "meta": {
             "sections": [p.section for p in pages],
             "logs": logs,
-            "pageCount": len(pages),
+            "pageCount": len(block_pages),
+            "topicCount": len(pages),
             "itemCount": len(items),
             "stageTypes": [s.get("type") for s in stages],
         },

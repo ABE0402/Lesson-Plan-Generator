@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>크레용 디지털 교안</title>
+  <style>
+    :root {
+      --ink: #1f2430;
+      --muted: #5c6570;
+      --line: #e4ddd2;
+      --paper: #fffdf8;
+      --accent: #e07a2f;
+      --accent-deep: #c45f16;
+      --sky: #3a7ca5;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      color: var(--ink);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background:
+        radial-gradient(900px 420px at 0% 0%, #ffe4c4 0%, transparent 55%),
+        radial-gradient(700px 360px at 100% 0%, #d9eef6 0%, transparent 50%),
+        linear-gradient(180deg, #faf6ef 0%, #ebe2d4 100%);
+    }
+    button { font: inherit; border: 0; cursor: pointer; background: none; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    img { display: block; max-width: 100%; height: auto; }
+    [hidden] { display: none !important; }
+
+    .frame {
+      width: min(1100px, calc(100% - 16px));
+      height: 100dvh;
+      margin: 0 auto;
+      padding: 8px 0 12px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      border: 1px solid rgba(255,255,255,0.85);
+      border-radius: 16px;
+      background: rgba(255,253,248,0.88);
+      backdrop-filter: blur(8px);
+    }
+    .brand { font-weight: 800; font-size: 0.95rem; }
+    .meta { color: var(--muted); font-size: 0.82rem; }
+    .top-actions { display: flex; gap: 8px; align-items: center; }
+    .pill {
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .ghost {
+      border-radius: 999px;
+      padding: 6px 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 0.8rem;
+    }
+
+    .stage {
+      min-height: 0;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.9);
+      background: rgba(255,253,248,0.94);
+      box-shadow: 0 10px 30px rgba(60,40,20,0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 20px 22px 28px;
+    }
+    .kicker {
+      color: var(--accent-deep);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+      line-height: 1.35;
+    }
+    .blocks { display: flex; flex-direction: column; gap: 14px; }
+    .blk-heading {
+      margin: 8px 0 0;
+      font-size: 1.05rem;
+      color: var(--sky);
+      font-weight: 800;
+    }
+    .blk-text {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+    .blk-image, .blk-gallery {
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f7f1e8;
+      border: 1px solid var(--line);
+    }
+    .blk-image img {
+      width: 100%;
+      max-height: min(52dvh, 520px);
+      object-fit: contain;
+      margin: 0 auto;
+      background: #fff;
+    }
+    .blk-gallery {
+      display: grid;
+      gap: 8px;
+      padding: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+    .blk-gallery img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 10px;
+    }
+    .blk-h5p {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #111;
+    }
+    .blk-h5p .label {
+      padding: 8px 12px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .blk-h5p iframe {
+      width: 100%;
+      min-height: min(62dvh, 640px);
+      border: 0;
+      display: block;
+      background: #fff;
+    }
+    .blk-divider {
+      height: 1px;
+      background: var(--line);
+      margin: 4px 0;
+    }
+    .quiz {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+    }
+    .quiz h3 { margin: 0 0 10px; font-size: 1rem; }
+    .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .opts button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: #faf6ef;
+    }
+    .opts button.on { background: #ffe8d2; border-color: var(--accent); }
+
+    .bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 4px 2px;
+    }
+    .nav-btn {
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      font-weight: 700;
+    }
+    .nav-btn.primary {
+      background: linear-gradient(180deg, var(--accent), var(--accent-deep));
+      color: #fff;
+      border-color: transparent;
+    }
+    .dots {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 50%;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #d2c6b6;
+    }
+    .dot.on { background: var(--accent); transform: scale(1.25); }
+
+    .teacher {
+      position: fixed; inset: 0; background: rgba(20,16,12,0.35);
+      display: grid; place-items: end center; padding: 16px; z-index: 20;
+    }
+    .teacher .card {
+      width: min(560px, 100%);
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid var(--line);
+    }
+    .teacher h2 { margin: 0; font-size: 1rem; }
+    .teacher p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
+
+    @media (max-width: 720px) {
+      .page-scroll { padding: 16px 14px 22px; }
+      .blk-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dots { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <header class="top">
+      <div>
+        <div class="brand" id="lessonTitle">크레용 디지털 교안</div>
+        <div class="meta" id="lessonLevel"></div>
+      </div>
+      <div class="top-actions">
+        <span class="pill" id="pagePill">1 / 1</span>
+        <button class="ghost" id="teacherBtn" type="button">교사 팁</button>
+      </div>
+    </header>
+
+    <section class="stage">
+      <div class="page-scroll" id="scroll">
+        <div class="kicker" id="kicker"></div>
+        <h1 id="heading"></h1>
+        <div class="blocks" id="blocks"></div>
+      </div>
+    </section>
+
+    <div class="teacher" id="teacher" hidden>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <h2>교사용</h2>
+          <button class="ghost" id="closeTeacher" type="button">닫기</button>
+        </div>
+        <p id="teacherText">원본 순서대로 블록을 보여 줍니다. 필요하면 원본 링크를 함께 보세요.</p>
+      </div>
+    </div>
+
+    <footer class="bottom">
+      <button class="nav-btn" id="prevBtn" type="button">← 이전</button>
+      <div class="dots" id="dots"></div>
+      <button class="nav-btn primary" id="nextBtn" type="button">다음 →</button>
+    </footer>
+  </div>
+
+  <script>
+    const lessonData = __LESSON_DATA__;
+    let index = 0;
+
+    const pages = (lessonData.pages && lessonData.pages.length)
+      ? lessonData.pages
+      : legacyFromStages(lessonData);
+
+    function legacyFromStages(data) {
+      /* 카드 경로 등 stages만 있을 때 최소 변환 */
+      const out = [];
+      (data.stages || []).forEach((s) => {
+        const blocks = [];
+        if (s.bubble) blocks.push({ type: "text", text: s.bubble });
+        if (s.image) blocks.push({ type: "image", src: s.image });
+        (s.images || []).forEach((src) => blocks.push({ type: "image", src }));
+        if (s.videoUrl) blocks.push({ type: "h5p", src: s.videoUrl, title: s.title || "영상" });
+        (s.discussionPages || []).forEach((p) => {
+          if (p.bubble) blocks.push({ type: "text", text: p.bubble });
+          if (p.image) blocks.push({ type: "image", src: p.image });
+        });
+        (s.playPages || []).forEach((p) => {
+          if (p.title) blocks.push({ type: "heading", text: p.title });
+          if (p.bubble) blocks.push({ type: "text", text: p.bubble });
+          (p.steps || []).forEach((t) => blocks.push({ type: "text", text: t }));
+          if (p.image) blocks.push({ type: "image", src: p.image });
+        });
+        (s.closingPages || []).forEach((p) => {
+          if (p.bubble) blocks.push({ type: "text", text: p.bubble });
+          if (p.quiz) blocks.push({ type: "quiz", question: p.quiz.question, options: p.quiz.options || [] });
+        });
+        out.push({
+          kicker: s.displayName || s.label,
+          title: s.title || s.label,
+          blocks,
+        });
+      });
+      return out;
+    }
+
+    function esc(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderBlocks(blocks) {
+      const root = document.getElementById("blocks");
+      root.innerHTML = "";
+      (blocks || []).forEach((b) => {
+        const t = b.type;
+        if (t === "heading") {
+          const el = document.createElement("h2");
+          el.className = "blk-heading";
+          el.textContent = b.text || "";
+          root.appendChild(el);
+        } else if (t === "text") {
+          const el = document.createElement("p");
+          el.className = "blk-text";
+          el.textContent = b.text || "";
+          root.appendChild(el);
+        } else if (t === "image" && b.src) {
+          const wrap = document.createElement("div");
+          wrap.className = "blk-image";
+          wrap.innerHTML = `<img src="${esc(b.src)}" alt="">`;
+          root.appendChild(wrap);
+        } else if (t === "gallery" && b.srcs && b.srcs.length) {
+          const wrap = document.createElement("div");
+          wrap.className = "blk-gallery";
+          wrap.innerHTML = b.srcs.map((src) => `<img src="${esc(src)}" alt="">`).join("");
+          root.appendChild(wrap);
+        } else if (t === "h5p" && b.src) {
+          const wrap = document.createElement("div");
+          wrap.className = "blk-h5p";
+          wrap.innerHTML = `
+            <div class="label">${esc(b.title || "인터랙티브")}</div>
+            <iframe src="${esc(b.src)}" allowfullscreen title="${esc(b.title || "H5P")}"></iframe>`;
+          root.appendChild(wrap);
+        } else if (t === "divider") {
+          const el = document.createElement("div");
+          el.className = "blk-divider";
+          root.appendChild(el);
+        } else if (t === "quiz") {
+          const wrap = document.createElement("div");
+          wrap.className = "quiz";
+          const opts = (b.options || []).map((o, i) =>
+            `<button type="button" data-i="${i}">${esc(o)}</button>`
+          ).join("");
+          wrap.innerHTML = `<h3>${esc(b.question || "질문")}</h3><div class="opts">${opts}</div>`;
+          wrap.querySelectorAll("button").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              wrap.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+              btn.classList.add("on");
+            });
+          });
+          root.appendChild(wrap);
+        }
+      });
+    }
+
+    function render() {
+      const page = pages[index] || { title: "", blocks: [] };
+      document.getElementById("lessonTitle").textContent = lessonData.title || "크레용 디지털 교안";
+      document.getElementById("lessonLevel").textContent = lessonData.level || "";
+      document.getElementById("kicker").textContent = page.kicker || page.displayName || "";
+      document.getElementById("heading").textContent = page.title || "";
+      document.getElementById("pagePill").textContent = `${index + 1} / ${pages.length}`;
+      document.getElementById("prevBtn").disabled = index <= 0;
+      document.getElementById("nextBtn").disabled = index >= pages.length - 1;
+      const tip = lessonData.sourceUrl
+        ? `원본: ${lessonData.sourceUrl}`
+        : "원본 링크가 없습니다.";
+      document.getElementById("teacherText").textContent = tip;
+      renderBlocks(page.blocks || []);
+      document.getElementById("scroll").scrollTop = 0;
+
+      const dots = document.getElementById("dots");
+      dots.innerHTML = pages.map((_, i) =>
+        `<span class="dot${i === index ? " on" : ""}"></span>`
+      ).join("");
+    }
+
+    document.getElementById("prevBtn").onclick = () => { if (index > 0) { index -= 1; render(); } };
+    document.getElementById("nextBtn").onclick = () => { if (index < pages.length - 1) { index += 1; render(); } };
+    document.getElementById("teacherBtn").onclick = () => {
+      document.getElementById("teacher").hidden = false;
+    };
+    document.getElementById("closeTeacher").onclick = () => {
+      document.getElementById("teacher").hidden = true;
+    };
+    document.getElementById("teacher").addEventListener("click", (e) => {
+      if (e.target.id === "teacher") e.currentTarget.hidden = true;
+    });
+
+    render();
+  </script>
+</body>
+</html>

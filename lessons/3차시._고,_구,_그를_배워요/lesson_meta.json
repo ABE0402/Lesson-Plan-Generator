@@ -1,0 +1,47 @@
+{
+  "title": "3차시. 고, 구, 그를 배워요",
+  "level": "글자블럭으로 재밌게! 손끝에서 만나는 한글",
+  "sourceUrl": "https://crayonschool.co.kr/lessons/3%ec%b0%a8%ec%8b%9c-%ea%b3%a0-%ea%b5%ac-%ea%b7%b8%eb%a5%bc-%eb%b0%b0%ec%9b%8c%ec%9a%94/",
+  "stages": [
+    {
+      "type": "intro",
+      "label": "차시 안내"
+    },
+    {
+      "type": "discussion",
+      "label": "1. 탐색 활동"
+    },
+    {
+      "type": "video",
+      "label": "1. 탐색 활동"
+    },
+    {
+      "type": "discussion",
+      "label": "2. 글자 학습"
+    },
+    {
+      "type": "video",
+      "label": "2. 글자 학습 · 영상1"
+    },
+    {
+      "type": "video",
+      "label": "2. 글자 학습 · 영상2"
+    },
+    {
+      "type": "video",
+      "label": "2. 글자 학습 · 영상3"
+    },
+    {
+      "type": "play",
+      "label": "3. 글자블럭 게임"
+    },
+    {
+      "type": "video",
+      "label": "3. 글자블럭 게임"
+    },
+    {
+      "type": "closing",
+      "label": "4. 수업 마무리"
+    }
+  ]
+}
