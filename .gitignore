@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# 생성 미리보기 (원하면 주석 해제해서 무시)
+# lessons/**/미리보기*.html
+# lessons/**/lesson_meta.json

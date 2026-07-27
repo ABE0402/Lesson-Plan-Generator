@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>담당자 데스크 · 카드 → 미리보기</title>
+  <style>
+    :root {
+      --ink: #1c2430;
+      --muted: #5a6573;
+      --line: #e6e0d6;
+      --sand: #f7f1e7;
+      --accent: #e07a2f;
+      --accent-deep: #c45f16;
+      --ok: #2f7d4a;
+      --bad: #b42318;
+      --shadow: 0 18px 48px rgba(28, 36, 48, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 8% 0%, #ffe7c8 0%, transparent 55%),
+        linear-gradient(180deg, #fbf7f0 0%, #f0e6d8 100%);
+      padding: 28px 16px 48px;
+    }
+    .page { max-width: 920px; margin: 0 auto; }
+    .hero, .card {
+      background: rgba(255,253,249,0.95);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .hero { padding: 24px 28px; margin-bottom: 12px; }
+    .eyebrow {
+      display: inline-flex;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #ffe8d2;
+      color: var(--accent-deep);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.6rem; letter-spacing: -0.03em; }
+    .hero p, .note { margin: 0; color: var(--muted); line-height: 1.5; font-size: 14px; }
+    .card { padding: 22px 24px; }
+    h2 { margin: 0 0 8px; font-size: 1.1rem; }
+    textarea {
+      width: 100%;
+      min-height: 360px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      font: inherit;
+      line-height: 1.45;
+      resize: vertical;
+      background: #fff;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), #f0a04b);
+      color: #fff;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn.ghost { background: var(--sand); color: var(--accent-deep); }
+    .status {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--sand);
+      color: var(--muted);
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+    .status.ok { background: #e8f6ec; color: var(--ok); }
+    .status.bad { background: #fdecec; color: var(--bad); }
+    .nav { margin-top: 10px; font-size: 13px; }
+    .nav a { color: var(--accent-deep); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="eyebrow">담당자 전용 · 실무자에게 이 화면을 주지 마세요</div>
+      <h1>수업 카드 → 미리보기</h1>
+      <p>실무자가 보낸 한글 수업 카드를 붙여넣고, 미리보기 HTML을 만들어 다시 전달하세요.</p>
+      <div class="nav"><a href="/">← 링크 수집 툴</a></div>
+    </section>
+
+    <section class="card">
+      <h2>수업 카드 붙여넣기</h2>
+      <p class="note" style="margin-bottom:12px">`수업카드.txt` 내용 전체. JSON 아님.</p>
+      <textarea id="card" placeholder="차시 제목: ...&#10;[화면 1] 수업 소개&#10;..."></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;font-weight:700;cursor:pointer;">
+        <input type="checkbox" id="fetchImages" checked />
+        원본 링크에서 이미지 가져오기 (카드에 원본 링크 필요 · 조금 더 걸림)
+      </label>
+      <div class="actions">
+        <button class="btn" id="btnLoadSample" type="button">샘플 불러오기</button>
+        <button class="btn" id="btnBuild" type="button">미리보기 만들기</button>
+        <button class="btn ghost" id="btnDownload" type="button" disabled>HTML 다운로드</button>
+        <button class="btn ghost" id="btnOpen" type="button" disabled>새 탭에서 열기</button>
+      </div>
+      <div class="status" id="status">대기 중 — 카드를 붙여넣으세요.</div>
+    </section>
+  </div>
+
+  <script>
+    const els = {
+      card: document.getElementById("card"),
+      status: document.getElementById("status"),
+      btnBuild: document.getElementById("btnBuild"),
+      btnDownload: document.getElementById("btnDownload"),
+      btnOpen: document.getElementById("btnOpen"),
+      btnLoadSample: document.getElementById("btnLoadSample"),
+    };
+    let last = null;
+
+    function setStatus(msg, kind) {
+      els.status.textContent = msg;
+      els.status.className = "status" + (kind ? " " + kind : "");
+    }
+
+    els.btnLoadSample.addEventListener("click", async () => {
+      try {
+        const r = await fetch("/api/sample-card");
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error || "샘플 실패");
+        els.card.value = d.text;
+        setStatus("샘플 수업 카드를 불러왔습니다. 미리보기를 만들어 보세요.");
+      } catch (e) {
+        setStatus(String(e.message || e), "bad");
+      }
+    });
+
+    els.btnBuild.addEventListener("click", async () => {
+      const text = els.card.value.trim();
+      if (!text) {
+        setStatus("수업 카드 내용을 붙여넣어 주세요.", "bad");
+        return;
+      }
+      els.btnBuild.disabled = true;
+      setStatus("만드는 중…");
+      try {
+        const r = await fetch("/api/card-to-preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            card: text,
+            fetchImages: document.getElementById("fetchImages").checked,
+          }),
+        });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error || "실패");
+        last = d;
+        els.btnDownload.disabled = false;
+        els.btnOpen.disabled = false;
+        const stages = (d.stages || []).map((s) => `- ${s}`).join("\n");
+        const imgLine = d.imageNote ? `\n${d.imageNote}` : "";
+        setStatus(`완료: ${d.title}\n단계 ${d.stageCount}개${imgLine}\n${stages}\n\n실무자에게 HTML을 전달하세요.`, "ok");
+      } catch (e) {
+        last = null;
+        els.btnDownload.disabled = true;
+        els.btnOpen.disabled = true;
+        setStatus(String(e.message || e), "bad");
+      } finally {
+        els.btnBuild.disabled = false;
+      }
+    });
+
+    els.btnDownload.addEventListener("click", () => {
+      if (!last) return;
+      const blob = new Blob([last.html], { type: "text/html;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = last.filename || "미리보기.html";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    els.btnOpen.addEventListener("click", () => {
+      if (!last) return;
+      const w = window.open("", "_blank");
+      w.document.write(last.html);
+      w.document.close();
+    });
+  </script>
+</body>
+</html>
