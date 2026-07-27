@@ -9,13 +9,13 @@
       --ink: #1f2430;
       --muted: #5c6570;
       --line: #e4ddd2;
-      --paper: #fffdf8;
       --accent: #e07a2f;
       --accent-deep: #c45f16;
       --sky: #3a7ca5;
+      --gap: 12px;
     }
     * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
     body {
       color: var(--ink);
       font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
@@ -78,11 +78,15 @@
       display: flex;
       flex-direction: column;
     }
-    .page-scroll {
+    /* 스크롤 금지 — 넘치면 페이지 분할 */
+    .page-pane {
       flex: 1;
       min-height: 0;
-      overflow: auto;
-      padding: 20px 22px 28px;
+      overflow: hidden;
+      padding: 18px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .kicker {
       color: var(--accent-deep);
@@ -90,23 +94,31 @@
       font-weight: 700;
       letter-spacing: 0.02em;
       margin-bottom: 4px;
+      flex: 0 0 auto;
     }
     h1 {
-      margin: 0 0 16px;
-      font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+      margin: 0 0 12px;
+      font-size: clamp(1.05rem, 2vw, 1.4rem);
       line-height: 1.35;
+      flex: 0 0 auto;
     }
-    .blocks { display: flex; flex-direction: column; gap: 14px; }
+    .blocks {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      min-height: 0;
+      overflow: hidden;
+    }
     .blk-heading {
-      margin: 8px 0 0;
-      font-size: 1.05rem;
+      margin: 0;
+      font-size: 1.02rem;
       color: var(--sky);
       font-weight: 800;
     }
     .blk-text {
       margin: 0;
-      font-size: 1rem;
-      line-height: 1.65;
+      font-size: 0.98rem;
+      line-height: 1.55;
       white-space: pre-wrap;
     }
     .blk-image, .blk-gallery {
@@ -114,10 +126,12 @@
       overflow: hidden;
       background: #f7f1e8;
       border: 1px solid var(--line);
+      flex: 0 1 auto;
+      min-height: 0;
     }
     .blk-image img {
       width: 100%;
-      max-height: min(52dvh, 520px);
+      max-height: min(42dvh, 380px);
       object-fit: contain;
       margin: 0 auto;
       background: #fff;
@@ -126,10 +140,12 @@
       display: grid;
       gap: 8px;
       padding: 8px;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      align-content: center;
     }
     .blk-gallery img {
       width: 100%;
+      max-height: min(28dvh, 220px);
       aspect-ratio: 1;
       object-fit: contain;
       background: #fff;
@@ -140,6 +156,10 @@
       border-radius: 14px;
       overflow: hidden;
       background: #111;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
     }
     .blk-h5p .label {
       padding: 8px 12px;
@@ -147,10 +167,12 @@
       border-bottom: 1px solid var(--line);
       font-size: 0.85rem;
       color: var(--muted);
+      flex: 0 0 auto;
     }
     .blk-h5p iframe {
       width: 100%;
-      min-height: min(62dvh, 640px);
+      flex: 1 1 auto;
+      min-height: min(58dvh, 560px);
       border: 0;
       display: block;
       background: #fff;
@@ -158,7 +180,7 @@
     .blk-divider {
       height: 1px;
       background: var(--line);
-      margin: 4px 0;
+      margin: 2px 0;
     }
     .quiz {
       border: 1px solid var(--line);
@@ -201,6 +223,8 @@
       flex-wrap: wrap;
       justify-content: center;
       max-width: 50%;
+      max-height: 28px;
+      overflow: hidden;
     }
     .dot {
       width: 7px; height: 7px; border-radius: 50%;
@@ -222,8 +246,16 @@
     .teacher h2 { margin: 0; font-size: 1rem; }
     .teacher p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
 
+    #measureHost {
+      position: absolute;
+      left: -99999px;
+      top: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
     @media (max-width: 720px) {
-      .page-scroll { padding: 16px 14px 22px; }
+      .page-pane { padding: 14px 14px 16px; }
       .blk-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .dots { display: none; }
     }
@@ -243,7 +275,7 @@
     </header>
 
     <section class="stage">
-      <div class="page-scroll" id="scroll">
+      <div class="page-pane" id="pane">
         <div class="kicker" id="kicker"></div>
         <h1 id="heading"></h1>
         <div class="blocks" id="blocks"></div>
@@ -256,7 +288,7 @@
           <h2>교사용</h2>
           <button class="ghost" id="closeTeacher" type="button">닫기</button>
         </div>
-        <p id="teacherText">원본 순서대로 블록을 보여 줍니다. 필요하면 원본 링크를 함께 보세요.</p>
+        <p id="teacherText">화면은 스크롤하지 않습니다. 내용이 길면 다음 장으로 이어집니다.</p>
       </div>
     </div>
 
@@ -266,17 +298,18 @@
       <button class="nav-btn primary" id="nextBtn" type="button">다음 →</button>
     </footer>
   </div>
+  <div id="measureHost"></div>
 
   <script>
     const lessonData = __LESSON_DATA__;
     let index = 0;
+    let slides = [];
 
-    const pages = (lessonData.pages && lessonData.pages.length)
+    const sourcePages = (lessonData.pages && lessonData.pages.length)
       ? lessonData.pages
       : legacyFromStages(lessonData);
 
     function legacyFromStages(data) {
-      /* 카드 경로 등 stages만 있을 때 최소 변환 */
       const out = [];
       (data.stages || []).forEach((s) => {
         const blocks = [];
@@ -298,11 +331,7 @@
           if (p.bubble) blocks.push({ type: "text", text: p.bubble });
           if (p.quiz) blocks.push({ type: "quiz", question: p.quiz.question, options: p.quiz.options || [] });
         });
-        out.push({
-          kicker: s.displayName || s.label,
-          title: s.title || s.label,
-          blocks,
-        });
+        out.push({ kicker: s.displayName || s.label, title: s.title || s.label, blocks });
       });
       return out;
     }
@@ -315,84 +344,212 @@
         .replace(/"/g, "&quot;");
     }
 
-    function renderBlocks(blocks) {
-      const root = document.getElementById("blocks");
-      root.innerHTML = "";
+    function expandBlocks(blocks) {
+      /* gallery가 크면 장당 이미지 수를 줄여 넘침을 줄임 */
+      const out = [];
       (blocks || []).forEach((b) => {
-        const t = b.type;
-        if (t === "heading") {
-          const el = document.createElement("h2");
-          el.className = "blk-heading";
-          el.textContent = b.text || "";
-          root.appendChild(el);
-        } else if (t === "text") {
-          const el = document.createElement("p");
-          el.className = "blk-text";
-          el.textContent = b.text || "";
-          root.appendChild(el);
-        } else if (t === "image" && b.src) {
-          const wrap = document.createElement("div");
-          wrap.className = "blk-image";
-          wrap.innerHTML = `<img src="${esc(b.src)}" alt="">`;
-          root.appendChild(wrap);
-        } else if (t === "gallery" && b.srcs && b.srcs.length) {
-          const wrap = document.createElement("div");
-          wrap.className = "blk-gallery";
-          wrap.innerHTML = b.srcs.map((src) => `<img src="${esc(src)}" alt="">`).join("");
-          root.appendChild(wrap);
-        } else if (t === "h5p" && b.src) {
-          const wrap = document.createElement("div");
-          wrap.className = "blk-h5p";
-          wrap.innerHTML = `
-            <div class="label">${esc(b.title || "인터랙티브")}</div>
-            <iframe src="${esc(b.src)}" allowfullscreen title="${esc(b.title || "H5P")}"></iframe>`;
-          root.appendChild(wrap);
-        } else if (t === "divider") {
-          const el = document.createElement("div");
-          el.className = "blk-divider";
-          root.appendChild(el);
-        } else if (t === "quiz") {
-          const wrap = document.createElement("div");
-          wrap.className = "quiz";
-          const opts = (b.options || []).map((o, i) =>
-            `<button type="button" data-i="${i}">${esc(o)}</button>`
-          ).join("");
-          wrap.innerHTML = `<h3>${esc(b.question || "질문")}</h3><div class="opts">${opts}</div>`;
-          wrap.querySelectorAll("button").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              wrap.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
-              btn.classList.add("on");
-            });
-          });
-          root.appendChild(wrap);
+        if (b.type === "gallery" && b.srcs && b.srcs.length > 4) {
+          for (let i = 0; i < b.srcs.length; i += 4) {
+            const slice = b.srcs.slice(i, i + 4);
+            out.push(slice.length === 1
+              ? { type: "image", src: slice[0] }
+              : { type: "gallery", srcs: slice });
+          }
+        } else if (b.type === "h5p") {
+          out.push(b);
+        } else {
+          out.push(b);
         }
       });
+      return out;
+    }
+
+    function appendBlockEl(root, b) {
+      const t = b.type;
+      if (t === "heading") {
+        const el = document.createElement("h2");
+        el.className = "blk-heading";
+        el.textContent = b.text || "";
+        root.appendChild(el);
+      } else if (t === "text") {
+        const el = document.createElement("p");
+        el.className = "blk-text";
+        el.textContent = b.text || "";
+        root.appendChild(el);
+      } else if (t === "image" && b.src) {
+        const wrap = document.createElement("div");
+        wrap.className = "blk-image";
+        wrap.innerHTML = `<img src="${esc(b.src)}" alt="">`;
+        root.appendChild(wrap);
+      } else if (t === "gallery" && b.srcs && b.srcs.length) {
+        const wrap = document.createElement("div");
+        wrap.className = "blk-gallery";
+        wrap.innerHTML = b.srcs.map((src) => `<img src="${esc(src)}" alt="">`).join("");
+        root.appendChild(wrap);
+      } else if (t === "h5p" && b.src) {
+        const wrap = document.createElement("div");
+        wrap.className = "blk-h5p";
+        wrap.innerHTML = `
+          <div class="label">${esc(b.title || "인터랙티브")}</div>
+          <iframe src="${esc(b.src)}" allowfullscreen title="${esc(b.title || "H5P")}"></iframe>`;
+        root.appendChild(wrap);
+      } else if (t === "divider") {
+        const el = document.createElement("div");
+        el.className = "blk-divider";
+        root.appendChild(el);
+      } else if (t === "quiz") {
+        const wrap = document.createElement("div");
+        wrap.className = "quiz";
+        const opts = (b.options || []).map((o, i) =>
+          `<button type="button" data-i="${i}">${esc(o)}</button>`
+        ).join("");
+        wrap.innerHTML = `<h3>${esc(b.question || "질문")}</h3><div class="opts">${opts}</div>`;
+        wrap.querySelectorAll("button").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            wrap.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+            btn.classList.add("on");
+          });
+        });
+        root.appendChild(wrap);
+      }
+    }
+
+    function renderBlocksInto(root, blocks) {
+      root.innerHTML = "";
+      (blocks || []).forEach((b) => appendBlockEl(root, b));
+    }
+
+    function waitImages(root) {
+      const imgs = [...root.querySelectorAll("img")];
+      if (!imgs.length) return Promise.resolve();
+      return Promise.all(imgs.map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((res) => {
+          img.onload = img.onerror = () => res();
+        });
+      }));
+    }
+
+    async function fits(meta, blocks, budgetH, budgetW) {
+      const host = document.getElementById("measureHost");
+      host.innerHTML = "";
+      const pane = document.createElement("div");
+      pane.className = "page-pane";
+      pane.style.width = budgetW + "px";
+      pane.style.height = budgetH + "px";
+      pane.style.overflow = "hidden";
+      pane.innerHTML = `
+        <div class="kicker"></div>
+        <h1></h1>
+        <div class="blocks"></div>`;
+      pane.querySelector(".kicker").textContent = meta.kicker || "";
+      pane.querySelector("h1").textContent = meta.title || "";
+      const blocksEl = pane.querySelector(".blocks");
+      renderBlocksInto(blocksEl, blocks);
+      host.appendChild(pane);
+      await waitImages(pane);
+      const overflow = pane.scrollHeight > pane.clientHeight + 2
+        || blocksEl.scrollHeight + pane.querySelector("h1").offsetHeight
+          + pane.querySelector(".kicker").offsetHeight + 24 > budgetH + 2;
+      /* scrollHeight on overflow:hidden still reports content size */
+      const contentH = pane.scrollHeight;
+      host.innerHTML = "";
+      return contentH <= budgetH + 1;
+    }
+
+    async function paginate() {
+      const pane = document.getElementById("pane");
+      const budgetH = pane.clientHeight;
+      const budgetW = pane.clientWidth;
+      const out = [];
+
+      for (const page of sourcePages) {
+        const meta = {
+          kicker: page.kicker || page.displayName || "",
+          title: page.title || "",
+        };
+        const blocks = expandBlocks(page.blocks || []);
+        if (!blocks.length) {
+          out.push({ ...meta, blocks: [] });
+          continue;
+        }
+
+        let chunk = [];
+        for (const block of blocks) {
+          /* H5P는 단독 페이지 */
+          if (block.type === "h5p") {
+            if (chunk.length) {
+              out.push({ ...meta, blocks: chunk });
+              chunk = [];
+            }
+            out.push({ ...meta, title: block.title || meta.title, blocks: [block] });
+            continue;
+          }
+
+          const trial = chunk.concat([block]);
+          if (await fits(meta, trial, budgetH, budgetW)) {
+            chunk = trial;
+            continue;
+          }
+          if (chunk.length) {
+            out.push({ ...meta, blocks: chunk });
+            chunk = [];
+          }
+          /* 한 블록이 화면보다 커도 한 장에 넣고(이미지 contain), 텍스트면 강제로 한 장 */
+          if (block.type === "gallery" && block.srcs && block.srcs.length > 1) {
+            for (const src of block.srcs) {
+              out.push({ ...meta, blocks: [{ type: "image", src }] });
+            }
+          } else {
+            chunk = [block];
+            if (!(await fits(meta, chunk, budgetH, budgetW))) {
+              out.push({ ...meta, blocks: chunk });
+              chunk = [];
+            }
+          }
+        }
+        if (chunk.length) out.push({ ...meta, blocks: chunk });
+      }
+
+      slides = out.map((s, i) => ({
+        ...s,
+        displayName: `${String(i + 1).padStart(2, "0")} ${s.title || s.kicker || "화면"}`,
+      }));
+      if (!slides.length) slides = [{ kicker: "", title: "내용 없음", blocks: [] }];
     }
 
     function render() {
-      const page = pages[index] || { title: "", blocks: [] };
+      const page = slides[index] || { title: "", blocks: [] };
       document.getElementById("lessonTitle").textContent = lessonData.title || "크레용 디지털 교안";
       document.getElementById("lessonLevel").textContent = lessonData.level || "";
       document.getElementById("kicker").textContent = page.kicker || page.displayName || "";
       document.getElementById("heading").textContent = page.title || "";
-      document.getElementById("pagePill").textContent = `${index + 1} / ${pages.length}`;
+      document.getElementById("pagePill").textContent = `${index + 1} / ${slides.length}`;
       document.getElementById("prevBtn").disabled = index <= 0;
-      document.getElementById("nextBtn").disabled = index >= pages.length - 1;
-      const tip = lessonData.sourceUrl
-        ? `원본: ${lessonData.sourceUrl}`
-        : "원본 링크가 없습니다.";
-      document.getElementById("teacherText").textContent = tip;
-      renderBlocks(page.blocks || []);
-      document.getElementById("scroll").scrollTop = 0;
-
-      const dots = document.getElementById("dots");
-      dots.innerHTML = pages.map((_, i) =>
+      document.getElementById("nextBtn").disabled = index >= slides.length - 1;
+      document.getElementById("teacherText").textContent = lessonData.sourceUrl
+        ? `원본: ${lessonData.sourceUrl}\n화면은 스크롤되지 않습니다. 길면 다음 장으로 이어집니다.`
+        : "화면은 스크롤되지 않습니다. 길면 다음 장으로 이어집니다.";
+      renderBlocksInto(document.getElementById("blocks"), page.blocks || []);
+      document.getElementById("dots").innerHTML = slides.map((_, i) =>
         `<span class="dot${i === index ? " on" : ""}"></span>`
       ).join("");
     }
 
-    document.getElementById("prevBtn").onclick = () => { if (index > 0) { index -= 1; render(); } };
-    document.getElementById("nextBtn").onclick = () => { if (index < pages.length - 1) { index += 1; render(); } };
+    async function rebuild(keepRatio) {
+      const ratio = slides.length ? index / Math.max(slides.length - 1, 1) : 0;
+      await paginate();
+      if (keepRatio) index = Math.min(slides.length - 1, Math.round(ratio * (slides.length - 1)));
+      else index = Math.min(index, slides.length - 1);
+      render();
+    }
+
+    document.getElementById("prevBtn").onclick = () => {
+      if (index > 0) { index -= 1; render(); }
+    };
+    document.getElementById("nextBtn").onclick = () => {
+      if (index < slides.length - 1) { index += 1; render(); }
+    };
     document.getElementById("teacherBtn").onclick = () => {
       document.getElementById("teacher").hidden = false;
     };
@@ -403,7 +560,13 @@
       if (e.target.id === "teacher") e.currentTarget.hidden = true;
     });
 
-    render();
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => rebuild(true), 200);
+    });
+
+    rebuild(false);
   </script>
 </body>
 </html>
