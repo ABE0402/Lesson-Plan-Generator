@@ -8,10 +8,11 @@
 
 1. 실무자가 Teams에 차시 링크를 올린다.
 2. `@Cursor`가 이 repo에서 변환을 돌린다.
-3. `lessons/…/미리보기_크레용형.html`을 스레드에 회신한다.
-4. 실무자가 HTML을 열어 검수한다.
+3. 답변 **맨 위**에 `preview.html` **Raw 다운로드 링크**를 준다.
+4. 실무자가 파일을 받아 브라우저로 연다. (PR은 개발용 보조)
 
-에이전트 지시: `AGENT_INSTRUCTIONS.md`
+에이전트 지시: `AGENT_INSTRUCTIONS.md`  
+미리보기 저장 위치: `lessons/previews/<slug>/preview.html`
 
 ## 로컬 백업
 
