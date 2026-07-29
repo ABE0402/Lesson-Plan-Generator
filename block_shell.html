@@ -30,7 +30,7 @@
     [hidden] { display: none !important; }
 
     .frame {
-      width: min(1100px, calc(100% - 16px));
+      width: min(1600px, calc(100% - 24px));
       height: 100%;
       max-height: 100%;
       margin: 0 auto;
@@ -84,7 +84,7 @@
       flex: 1;
       min-height: 0;
       overflow: hidden; /* 스크롤 금지 — 넘치면 페이지 분할 */
-      padding: 20px 22px 24px;
+      padding: 20px 48px 24px; /* 좌우 화살표 자리 */
     }
     .kicker {
       color: var(--accent-deep);
@@ -111,12 +111,18 @@
       line-height: 1.6;
       white-space: pre-wrap;
     }
+    .align-left { text-align: left; margin-left: 0; margin-right: auto; }
+    .align-center { text-align: center; margin-left: auto; margin-right: auto; }
+    .align-right { text-align: right; margin-left: auto; margin-right: 0; }
     .blk-image, .blk-gallery {
       border-radius: 14px;
       overflow: hidden;
       background: #f7f1e8;
       border: 1px solid var(--line);
     }
+    .blk-image.size-sm { width: min(42%, 280px); }
+    .blk-image.size-md { width: min(72%, 560px); }
+    .blk-image.size-lg { width: 100%; }
     .blk-image img {
       width: 100%;
       max-height: min(42dvh, 440px);
@@ -125,6 +131,8 @@
       background: #fff;
     }
     .blk-image.tight img { max-height: min(32dvh, 320px); }
+    .blk-image.size-sm img { max-height: min(28dvh, 260px); }
+    .blk-image.size-lg img { max-height: min(52dvh, 560px); }
     .blk-gallery {
       display: grid;
       gap: 8px;
@@ -144,6 +152,9 @@
       overflow: hidden;
       background: #111;
     }
+    .blk-h5p.size-sm { width: min(52%, 420px); }
+    .blk-h5p.size-md { width: min(78%, 720px); }
+    .blk-h5p.size-lg { width: 100%; }
     .blk-h5p .label {
       padding: 8px 12px;
       background: #fff;
@@ -153,11 +164,15 @@
     }
     .blk-h5p iframe {
       width: 100%;
-      min-height: min(48dvh, 520px);
+      height: min(32dvh, 360px);
+      min-height: 220px;
       border: 0;
       display: block;
       background: #fff;
     }
+    .blk-h5p.size-sm iframe { height: min(24dvh, 260px); min-height: 180px; }
+    .blk-h5p.size-md iframe { height: min(32dvh, 360px); min-height: 220px; }
+    .blk-h5p.size-lg iframe { height: min(42dvh, 480px); min-height: 280px; }
     .blk-divider {
       height: 1px;
       background: var(--line);
@@ -179,20 +194,34 @@
     }
     .opts button.on { background: #ffe8d2; border-color: var(--accent); }
 
-    /* 좌우 클릭 이동 영역 */
+    /* 작은 좌우 화살표 (전체 영역 클릭 아님) */
     .nav-hit {
       position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 20%;
+      top: 50%;
+      transform: translateY(-50%);
       z-index: 6;
-      border: 0;
-      padding: 0;
-      background: transparent;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 2px 10px rgba(60, 40, 20, 0.08);
+      color: var(--ink);
+      font-size: 1.15rem;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      opacity: 0.85;
+      transition: opacity 0.15s ease, background 0.15s ease;
     }
-    .nav-hit.prev { left: 0; cursor: w-resize; }
-    .nav-hit.next { right: 0; cursor: e-resize; }
-    .nav-hit:disabled { cursor: default; }
+    .nav-hit:hover:not(:disabled) { opacity: 1; background: #fff; }
+    .nav-hit.prev { left: 8px; }
+    .nav-hit.next { right: 8px; }
+    .nav-hit:disabled {
+      opacity: 0.28;
+      cursor: default;
+      box-shadow: none;
+    }
 
     .teacher {
       position: fixed; inset: 0; background: rgba(20,16,12,0.35);
@@ -209,9 +238,9 @@
     .teacher p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
 
     @media (max-width: 720px) {
-      .page-scroll { padding: 16px 14px 20px; }
+      .page-scroll { padding: 16px 40px 20px; }
       .blk-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .nav-hit { width: 24%; }
+      .nav-hit { width: 32px; height: 32px; font-size: 1.05rem; }
     }
   </style>
 </head>
@@ -234,8 +263,8 @@
         <h1 id="heading"></h1>
         <div class="blocks" id="blocks"></div>
       </div>
-      <button type="button" class="nav-hit prev" id="hitPrev" aria-label="이전 페이지"></button>
-      <button type="button" class="nav-hit next" id="hitNext" aria-label="다음 페이지"></button>
+      <button type="button" class="nav-hit prev" id="hitPrev" aria-label="이전 페이지">‹</button>
+      <button type="button" class="nav-hit next" id="hitNext" aria-label="다음 페이지">›</button>
     </section>
 
     <div class="teacher" id="teacher" hidden>
@@ -244,7 +273,7 @@
           <h2>교사용</h2>
           <button class="ghost" id="closeTeacher" type="button">닫기</button>
         </div>
-        <p id="teacherText">화면 왼쪽을 누르면 이전, 오른쪽을 누르면 다음 페이지입니다.</p>
+        <p id="teacherText">좌우 작은 화살표 또는 키보드 ← → 로 페이지를 넘깁니다.</p>
       </div>
     </div>
   </div>
@@ -256,6 +285,7 @@
     let pages = [];
     let reflowTimer = null;
     let reflowing = false;
+    let reflowQueued = false;
 
     function loadSourcePages(data) {
       if (data.pages && data.pages.length) return JSON.parse(JSON.stringify(data.pages));
@@ -306,29 +336,33 @@
       root.innerHTML = "";
       (blocks || []).forEach((b) => {
         const t = b.type;
+        const align = ["left", "center", "right"].includes(b.align)
+          ? b.align
+          : (t === "image" || t === "gallery" || t === "h5p" ? "center" : "left");
+        const size = ["sm", "md", "lg"].includes(b.size) ? b.size : "md";
         if (t === "heading") {
           const el = document.createElement("h2");
-          el.className = "blk-heading";
+          el.className = `blk-heading align-${align}`;
           el.textContent = b.text || "";
           root.appendChild(el);
         } else if (t === "text") {
           const el = document.createElement("p");
-          el.className = "blk-text";
+          el.className = `blk-text align-${align}`;
           el.textContent = b.text || "";
           root.appendChild(el);
         } else if (t === "image" && b.src) {
           const wrap = document.createElement("div");
-          wrap.className = "blk-image" + (tight ? " tight" : "");
+          wrap.className = `blk-image size-${size} align-${align}` + (tight ? " tight" : "");
           wrap.innerHTML = `<img src="${esc(b.src)}" alt="">`;
           root.appendChild(wrap);
         } else if (t === "gallery" && b.srcs && b.srcs.length) {
           const wrap = document.createElement("div");
-          wrap.className = "blk-gallery";
+          wrap.className = `blk-gallery align-${align}`;
           wrap.innerHTML = b.srcs.map((src) => `<img src="${esc(src)}" alt="">`).join("");
           root.appendChild(wrap);
         } else if (t === "h5p" && b.src) {
           const wrap = document.createElement("div");
-          wrap.className = "blk-h5p";
+          wrap.className = `blk-h5p size-${size} align-${align}`;
           wrap.innerHTML = `
             <div class="label">${esc(b.title || "인터랙티브")}</div>
             <iframe src="${esc(b.src)}" allowfullscreen title="${esc(b.title || "H5P")}"></iframe>`;
@@ -427,7 +461,10 @@
     }
 
     async function reflowPages() {
-      if (reflowing) return;
+      if (reflowing) {
+        reflowQueued = true;
+        return;
+      }
       reflowing = true;
       const keepId = (pages[index] && (pages[index].displayName || pages[index].title)) || "";
       try {
@@ -458,8 +495,13 @@
         }
         index = Math.max(0, Math.min(next, pages.length - 1));
         render();
+        notifyReflow();
       } finally {
         reflowing = false;
+        if (reflowQueued) {
+          reflowQueued = false;
+          scheduleReflow();
+        }
       }
     }
 
@@ -473,6 +515,27 @@
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({ type: "crayon-page-change", pageIndex: index }, "*");
         }
+      } catch (_e) { /* ignore */ }
+    }
+
+    /** 편집기는 플레이어 HTML이 나눈 페이지 구성을 그대로 따른다 */
+    function notifyReflow() {
+      try {
+        if (!window.parent || window.parent === window) return;
+        window.parent.postMessage(
+          {
+            type: "crayon-reflow",
+            pageIndex: index,
+            pages: pages.map((p) => ({
+              kicker: p.kicker || "",
+              title: p.title || "",
+              displayName: p.displayName || "",
+              kind: p.kind || "topic",
+              blocks: JSON.parse(JSON.stringify(p.blocks || [])),
+            })),
+          },
+          "*"
+        );
       } catch (_e) { /* ignore */ }
     }
 
@@ -493,8 +556,8 @@
       document.getElementById("hitPrev").disabled = index <= 0;
       document.getElementById("hitNext").disabled = index >= pages.length - 1;
       const tip = lessonData.sourceUrl
-        ? `원본: ${lessonData.sourceUrl}\n왼쪽 클릭=이전, 오른쪽 클릭=다음`
-        : "왼쪽 클릭=이전, 오른쪽 클릭=다음";
+        ? `원본: ${lessonData.sourceUrl}\n좌우 화살표 또는 키보드 ← →`
+        : "좌우 화살표 또는 키보드 ← →";
       document.getElementById("teacherText").textContent = tip;
       renderBlocks(page.blocks || [], false);
       notifyParent();
