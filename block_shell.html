@@ -31,7 +31,8 @@
 
     .frame {
       width: min(1100px, calc(100% - 16px));
-      height: 100dvh;
+      height: 100%;
+      max-height: 100%;
       margin: 0 auto;
       padding: 8px 0 12px;
       display: grid;
@@ -268,10 +269,10 @@
   </div>
 
   <script>
-    const lessonData = __LESSON_DATA__;
+    let lessonData = __LESSON_DATA__;
     let index = 0;
 
-    const pages = (lessonData.pages && lessonData.pages.length)
+    let pages = (lessonData.pages && lessonData.pages.length)
       ? lessonData.pages
       : legacyFromStages(lessonData);
 
@@ -369,7 +370,18 @@
       });
     }
 
-    function render() {
+    function notifyParent() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "crayon-page-change", pageIndex: index }, "*");
+        }
+      } catch (_e) { /* ignore */ }
+    }
+
+    function render(opts) {
+      const keepScroll = opts && opts.keepScroll;
+      const scrollEl = document.getElementById("scroll");
+      const prevScroll = keepScroll ? scrollEl.scrollTop : 0;
       const page = pages[index] || { title: "", blocks: [] };
       document.getElementById("lessonTitle").textContent = lessonData.title || "크레용 디지털 교안";
       document.getElementById("lessonLevel").textContent = lessonData.level || "";
@@ -383,13 +395,32 @@
         : "원본 링크가 없습니다.";
       document.getElementById("teacherText").textContent = tip;
       renderBlocks(page.blocks || []);
-      document.getElementById("scroll").scrollTop = 0;
+      scrollEl.scrollTop = keepScroll ? prevScroll : 0;
 
       const dots = document.getElementById("dots");
       dots.innerHTML = pages.map((_, i) =>
         `<span class="dot${i === index ? " on" : ""}"></span>`
       ).join("");
+      notifyParent();
     }
+
+    function applyLessonUpdate(payload) {
+      if (payload && payload.lesson) {
+        lessonData = payload.lesson;
+        pages = (lessonData.pages && lessonData.pages.length)
+          ? lessonData.pages
+          : legacyFromStages(lessonData);
+      }
+      if (payload && typeof payload.pageIndex === "number") {
+        index = Math.max(0, Math.min(payload.pageIndex, Math.max(pages.length - 1, 0)));
+      }
+      render({ keepScroll: true });
+    }
+
+    window.addEventListener("message", (e) => {
+      if (!e.data || e.data.type !== "crayon-lesson-update") return;
+      applyLessonUpdate(e.data);
+    });
 
     document.getElementById("prevBtn").onclick = () => { if (index > 0) { index -= 1; render(); } };
     document.getElementById("nextBtn").onclick = () => { if (index < pages.length - 1) { index += 1; render(); } };
