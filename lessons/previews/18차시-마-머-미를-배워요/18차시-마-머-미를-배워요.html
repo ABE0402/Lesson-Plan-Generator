@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>크레용 디지털 교안</title>
+  <style>
+    :root {
+      --ink: #1f2430;
+      --muted: #5c6570;
+      --line: #e4ddd2;
+      --paper: #fffdf8;
+      --accent: #e07a2f;
+      --accent-deep: #c45f16;
+      --sky: #3a7ca5;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body {
+      color: var(--ink);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background:
+        radial-gradient(900px 420px at 0% 0%, #ffe4c4 0%, transparent 55%),
+        radial-gradient(700px 360px at 100% 0%, #d9eef6 0%, transparent 50%),
+        linear-gradient(180deg, #faf6ef 0%, #ebe2d4 100%);
+    }
+    button { font: inherit; border: 0; cursor: pointer; background: none; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    img { display: block; max-width: 100%; height: auto; }
+    [hidden] { display: none !important; }
+
+    .frame {
+      width: min(1600px, calc(100% - 24px));
+      height: 100%;
+      max-height: 100%;
+      margin: 0 auto;
+      padding: 8px 0 10px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 8px;
+    }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      border: 1px solid rgba(255,255,255,0.85);
+      border-radius: 16px;
+      background: rgba(255,253,248,0.88);
+      backdrop-filter: blur(8px);
+    }
+    .brand { font-weight: 800; font-size: 0.95rem; }
+    .meta { color: var(--muted); font-size: 0.82rem; }
+    .top-actions { display: flex; gap: 8px; align-items: center; }
+    .pill {
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .ghost {
+      border-radius: 999px;
+      padding: 6px 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 0.8rem;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 0;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.9);
+      background: rgba(255,253,248,0.94);
+      box-shadow: 0 10px 30px rgba(60,40,20,0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden; /* 스크롤 금지 — 넘치면 페이지 분할 */
+      padding: 20px 48px 24px; /* 좌우 화살표 자리 */
+    }
+    .kicker {
+      color: var(--accent-deep);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+      line-height: 1.35;
+    }
+    .blocks { display: flex; flex-direction: column; gap: 12px; }
+    .blk-heading {
+      margin: 6px 0 0;
+      font-size: 1.05rem;
+      color: var(--sky);
+      font-weight: 800;
+    }
+    .blk-text {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .align-left { text-align: left; margin-left: 0; margin-right: auto; }
+    .align-center { text-align: center; margin-left: auto; margin-right: auto; }
+    .align-right { text-align: right; margin-left: auto; margin-right: 0; }
+    .blk-image, .blk-gallery {
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f7f1e8;
+      border: 1px solid var(--line);
+    }
+    .blk-image.size-sm { width: min(42%, 280px); }
+    .blk-image.size-md { width: min(72%, 560px); }
+    .blk-image.size-lg { width: 100%; }
+    .blk-image img {
+      width: 100%;
+      max-height: min(42dvh, 440px);
+      object-fit: contain;
+      margin: 0 auto;
+      background: #fff;
+    }
+    .blk-image.tight img { max-height: min(32dvh, 320px); }
+    .blk-image.size-sm img { max-height: min(28dvh, 260px); }
+    .blk-image.size-lg img { max-height: min(52dvh, 560px); }
+    .blk-gallery {
+      display: grid;
+      gap: 8px;
+      padding: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+    .blk-gallery img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 10px;
+    }
+    .blk-h5p {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #111;
+    }
+    .blk-h5p.size-sm { width: min(52%, 420px); }
+    .blk-h5p.size-md { width: min(78%, 720px); }
+    .blk-h5p.size-lg { width: 100%; }
+    .blk-h5p .label {
+      padding: 8px 12px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .blk-h5p iframe {
+      width: 100%;
+      height: min(32dvh, 360px);
+      min-height: 220px;
+      border: 0;
+      display: block;
+      background: #fff;
+    }
+    .blk-h5p.size-sm iframe { height: min(24dvh, 260px); min-height: 180px; }
+    .blk-h5p.size-md iframe { height: min(32dvh, 360px); min-height: 220px; }
+    .blk-h5p.size-lg iframe { height: min(42dvh, 480px); min-height: 280px; }
+    .blk-divider {
+      height: 1px;
+      background: var(--line);
+      margin: 4px 0;
+    }
+    .quiz {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+    }
+    .quiz h3 { margin: 0 0 10px; font-size: 1rem; }
+    .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .opts button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: #faf6ef;
+    }
+    .opts button.on { background: #ffe8d2; border-color: var(--accent); }
+
+    /* 작은 좌우 화살표 (전체 영역 클릭 아님) */
+    .nav-hit {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 6;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 2px 10px rgba(60, 40, 20, 0.08);
+      color: var(--ink);
+      font-size: 1.15rem;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      opacity: 0.85;
+      transition: opacity 0.15s ease, background 0.15s ease;
+    }
+    .nav-hit:hover:not(:disabled) { opacity: 1; background: #fff; }
+    .nav-hit.prev { left: 8px; }
+    .nav-hit.next { right: 8px; }
+    .nav-hit:disabled {
+      opacity: 0.28;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .teacher {
+      position: fixed; inset: 0; background: rgba(20,16,12,0.35);
+      display: grid; place-items: end center; padding: 16px; z-index: 20;
+    }
+    .teacher .card {
+      width: min(560px, 100%);
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid var(--line);
+    }
+    .teacher h2 { margin: 0; font-size: 1rem; }
+    .teacher p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
+
+    @media (max-width: 720px) {
+      .page-scroll { padding: 16px 40px 20px; }
+      .blk-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .nav-hit { width: 32px; height: 32px; font-size: 1.05rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <header class="top">
+      <div>
+        <div class="brand" id="lessonTitle">크레용 디지털 교안</div>
+        <div class="meta" id="lessonLevel"></div>
+      </div>
+      <div class="top-actions">
+        <span class="pill" id="pagePill">1 / 1</span>
+        <button class="ghost" id="teacherBtn" type="button">교사 팁</button>
+      </div>
+    </header>
+
+    <section class="stage" id="stage">
+      <div class="page-scroll" id="scroll">
+        <div class="kicker" id="kicker"></div>
+        <h1 id="heading"></h1>
+        <div class="blocks" id="blocks"></div>
+      </div>
+      <button type="button" class="nav-hit prev" id="hitPrev" aria-label="이전 페이지">‹</button>
+      <button type="button" class="nav-hit next" id="hitNext" aria-label="다음 페이지">›</button>
+    </section>
+
+    <div class="teacher" id="teacher" hidden>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <h2>교사용</h2>
+          <button class="ghost" id="closeTeacher" type="button">닫기</button>
+        </div>
+        <p id="teacherText">좌우 작은 화살표 또는 키보드 ← → 로 페이지를 넘깁니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let lessonData = {"mode": "blocks", "level": "글자블럭으로 재밌게! 손끝에서 만나는 한글", "title": "18차시. 마, 머, 미를 배워요", "sourceUrl": "https://crayonschool.co.kr/lessons/18%ec%b0%a8%ec%8b%9c-%eb%a7%88-%eb%a8%b8-%eb%af%b8%eb%a5%bc-%eb%b0%b0%ec%9b%8c%ec%9a%94/", "expression": "", "characterImages": {"intro": "", "thinking": "", "guide": ""}, "goals": ["「1. 탐색 활동」에서 배운 내용을 응용·놀이한다.", "「2. 글자 학습」내용을 익힌다.", "「3. 글자 블럭 게임」에서 배운 내용을 응용·놀이한다.", "오늘 수업을 회상하고 생각을 나눈다."], "materials": [], "pages": [{"kicker": "차시 안내", "title": "18차시. 마, 머, 미를 배워요", "kind": "lesson", "blocks": [{"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/001_fb626355_상품구성_5호.png"}, {"type": "text", "text": "[플라팜] 한글 글자블럭, 미니레고판, 6세 5호 교재"}, {"type": "gallery", "srcs": ["https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/002_989f282b_가정준비물_색연필-e1667454344487.jpg", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/003_80218160_차시안내_오늘의-활동.jpg"]}, {"type": "text", "text": "자음 ‘ㅁ’과 모음 ‘ㅏ, ㅓ, ㅣ’의 결합을 이해해요. 한글 글자블럭으로 ‘마, 머, 미’를 만들어요. ‘마, 머, 미’가 들어간 단어를 배워요. OX 퀴즈를 풀고 글자의 힘을 되찾아요."}], "displayName": "01 18차시. 마, 머, 미를 배워요"}, {"kicker": "1. 탐색 활동", "title": "1. 탐색 활동", "kind": "topic", "blocks": [{"type": "text", "text": "글자블럭으로 한글을 즐겁게 배우는 <손끝에서 만나는 한글> 열여덟 번째 수업이에요. 지난 시간에는 산타 마을에서 사라진 장난감을 되찾고, 내가 받고 싶은 선물을 블럭으로 만들어보았어요."}, {"type": "text", "text": "오늘은 글자 ‘마, 머, 미’ 를 배우고, 그 글자가 들어간 단어를 알아볼 거예요. 그리고 재밌는 낱말 판 게임을 통해 ‘마, 머, 미’ 의 힘도 되찾을 거예요. 오늘 수업도 기대되지요? 힘차게 시작해 볼까요!"}, {"type": "text", "text": "교재, 한글 글자블럭을 준비해주세요."}], "displayName": "02 1. 탐색 활동"}, {"kicker": "1. 탐색 활동", "title": "<ㅁ블럭을 찾아요>", "kind": "topic", "blocks": [{"type": "heading", "text": "<ㅁ블럭을 찾아요>"}, {"type": "text", "text": "어둠의 힘에게 빼앗긴 ‘마, 머, 미’의 힘을 되찾기 위해선 특별한 블럭이 필요해요. 활동을 통해, 오늘 우리에게 필요한 블럭을 찾아보도록 해요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/004_4607266a_교구활동1_수정.jpg"}, {"type": "text", "text": "퀴즈를 풀어요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/005_932e75e5_ㅁㅊㅇㅅ.png"}, {"type": "text", "text": "한글 글자블럭 중에서 ‘ㅁ’ 블럭 5개를 찾아보세요. 빨강, 노랑, 초록, 파랑, 흰색 ‘ㅁ’ 블럭이에요."}, {"type": "text", "text": "모두 찾았다면, 한 켠에 ‘ㅁ’ 블럭을 모아두세요."}], "displayName": "03 <ㅁ블럭을 찾아요>"}, {"kicker": "1. 탐색 활동", "title": "<ㅏ,ㅓ,ㅣ블럭을 찾아요>", "kind": "topic", "blocks": [{"type": "heading", "text": "<ㅏ,ㅓ,ㅣ블럭을 찾아요>"}, {"type": "text", "text": "이번에는 우리에게 필요한 모음 블럭을 찾아보도록 해요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/006_6ad8c47e_교구활동2_수정.jpg"}, {"type": "text", "text": "한글 글자블럭 중에서 ‘ㅏ, ㅓ, ㅣ’ 블럭 5개씩 찾아보세요."}, {"type": "text", "text": "교재 5p를 펼친 후, 우리가 찾은 블럭을 알맞은 그림 위에 올려놓으세요."}, {"type": "h5p", "src": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2036", "title": "인터랙티브 #2036"}, {"type": "h5p", "src": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2006", "title": "인터랙티브 #2006"}], "displayName": "04 <ㅏ,ㅓ,ㅣ블럭을 찾아요>"}, {"kicker": "2. 글자 학습", "title": "2. 글자 학습", "kind": "topic", "blocks": [{"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/007_9cf36aea_활동하기_수정.jpg"}, {"type": "text", "text": "교재, 한글 글자블럭, 미니레고판을 준비해주세요."}], "displayName": "05 2. 글자 학습"}, {"kicker": "2. 글자 학습", "title": "<‘마’ 를 배워요>", "kind": "topic", "blocks": [{"type": "heading", "text": "<‘마’ 를 배워요>"}, {"type": "text", "text": "‘ㅁ’과 ‘ㅏ’가 만나면 글자 ‘마’ 가 돼요. 우리 친구들도 글자 ‘마’ 를 만들어 볼까요? 교재 6p을 펼쳐요. 왼쪽에 ‘ㅁ’ 블럭을, 오른쪽에 ‘ㅏ’ 블럭을 올려 놓아요. ‘ㅁ’블럭과 ‘ㅏ’블럭을 가운데로 모아서 글자 ‘마’를 완성해요. 그림의 단어를 말하면서 블럭 글자를 잘 보고, ‘마’를 만들어 보세요. → 그림을 보고 어떤 단어일지 말해보세요. → 엄마의 ‘마’. 따라 말해보세요."}, {"type": "gallery", "srcs": ["https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/004_4607266a_교구활동1_수정.jpg", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/008_a466340c_마.png", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/009_7c17502a_20250220_143350.jpg"]}], "displayName": "06 <‘마’ 를 배워요>"}, {"kicker": "2. 글자 학습", "title": "<‘마’ 가 들어간 단어>", "kind": "topic", "blocks": [{"type": "heading", "text": "<‘마’ 가 들어간 단어>"}, {"type": "text", "text": "4장의 단어 카드가 있어요. 그림과 단어를 잘 보고, 문제를 풀어보세요. 교재 7p의 단어를 여러 번 읽어보세요. → 치마의 ‘마’. 따라 말해보세요. → 까마귀의 ‘마’. 따라 말해보세요. 미니 레고판에 글자블럭으로 단어를 만들어 보세요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/010_d2bb52ae_20250220_151717.jpg"}], "displayName": "07 <‘마’ 가 들어간 단어>"}, {"kicker": "2. 글자 학습", "title": "<‘머’ 를 배워요>", "kind": "topic", "blocks": [{"type": "heading", "text": "<‘머’ 를 배워요>"}, {"type": "text", "text": "‘ㅁ’과 ‘ㅓ’가 만나면 글자 ‘머’가 돼요. 우리 친구들도 글자 ‘머’ 를 만들어 볼까요? 교재 8p을 펼쳐요. 왼쪽에 ‘ㅁ’블럭을, 오른쪽에 ‘ㅓ’블럭을 올려 놓아요. ‘ㅁ’ 블럭과 ‘ㅓ’ 블럭을 가운데로 모아서 글자 ‘머’ 를 완성해요. 그림의 단어를 말하면서 블럭 글자를 잘 보고, ‘머’ 를 만들어 보세요. → 그림을 보고 어떤 단어일지 말해보세요. → 할머니의 ‘머’. 따라 말해보세요."}, {"type": "gallery", "srcs": ["https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/006_6ad8c47e_교구활동2_수정.jpg", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/011_176a389e_머.png", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/012_75330cca_20250220_152708.jpg"]}], "displayName": "08 <‘머’ 를 배워요>"}, {"kicker": "2. 글자 학습", "title": "<‘머’ 가 들어간 단어>", "kind": "topic", "blocks": [{"type": "heading", "text": "<‘머’ 가 들어간 단어>"}, {"type": "text", "text": "4장의 단어 카드가 있어요. 그림과 단어를 잘 보고, 문제를 풀어보세요. 교재 9p의 단어를 여러 번 읽어보세요. → 대머리의 ‘머’. 따라 말해보세요. → 머핀의 ‘머’. 따라 말해보세요. 미니 레고판에 글자블럭으로 단어를 만들어 보세요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/013_08658b75_q20250220_154247.jpg"}], "displayName": "09 <‘머’ 가 들어간 단어>"}, {"kicker": "2. 글자 학습", "title": "<‘미’ 를 배워요>", "kind": "topic", "blocks": [{"type": "heading", "text": "<‘미’ 를 배워요>"}, {"type": "text", "text": "‘ㅁ’과 ‘ㅣ’가 만나면 글자 ‘미’가 돼요. 우리 친구들도 글자 ‘미’를 만들어 볼까요? 교재 10p을 펼쳐요. 왼쪽에 ‘ㅁ’ 블럭을, 오른쪽에 ‘ㅣ’ 블럭을 올려 놓아요. ‘ㅁ’ 블럭과 ‘ㅣ’ 블럭을 가운데로 모아서 글자 ‘미’ 를 완성해요. 그림의 단어를 말하면서 블럭 글자를 잘 보고, ‘미’를 만들어 보세요. → 그림을 보고 어떤 단어일지 말해보세요. → 미소의 ‘미’. 따라 말해보세요."}, {"type": "gallery", "srcs": ["https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/014_38bf1fdc_교구활동3_수정.jpg", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/015_edbe9f12_미.png", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/016_94bd82c0_20250220_153959.jpg"]}], "displayName": "10 <‘미’ 를 배워요>"}, {"kicker": "2. 글자 학습", "title": "<‘미’ 가 들어간 단어>", "kind": "topic", "blocks": [{"type": "heading", "text": "<‘미’ 가 들어간 단어>"}, {"type": "text", "text": "4장의 단어 카드가 있어요. 그림과 단어를 잘 보고, 문제를 풀어보세요. 교재 11p의 단어를 여러 번 읽어보세요. → 개미의 ‘미’. 따라 말해보세요. → 미술관의 ‘미’. 따라 말해보세요. 미니 레고판에 글자 블럭으로 단어를 만들어 보세요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/017_3ecd320f_20250220_154752.jpg"}, {"type": "h5p", "src": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2204", "title": "인터랙티브 #2204"}, {"type": "h5p", "src": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2201", "title": "인터랙티브 #2201"}, {"type": "h5p", "src": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2205", "title": "인터랙티브 #2205"}], "displayName": "11 <‘미’ 가 들어간 단어>"}, {"kicker": "3. 글자 블럭 게임", "title": "3. 글자 블럭 게임", "kind": "topic", "blocks": [{"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/007_9cf36aea_활동하기_수정.jpg"}, {"type": "text", "text": "교재, 한글 글자블럭, 미니레고판, 스티커, 색연필을 준비해주세요."}], "displayName": "12 3. 글자 블럭 게임"}, {"kicker": "3. 글자 블럭 게임", "title": "<게임 방법을 이해해요>", "kind": "topic", "blocks": [{"type": "heading", "text": "<게임 방법을 이해해요>"}, {"type": "text", "text": "교재 12p를 펼쳐 보세요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/018_4f7f50d7_게임활동1_수정-e1667367856630.jpg"}, {"type": "text", "text": "어떤 그림이 있나요? → 그래요. 선물상자, 양발, 그리고 회색 보석이 있어요. OX퀴즈의 답을 맞히면, 교재에 스티커를 붙여서 글자의 힘을 모을 수 있어요."}, {"type": "gallery", "srcs": ["https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/019_57ce4309_플라팜_5호p12_가로.jpg", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/020_cba6e67a_MicrosoftTeams-image.jpg.jpg", "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/021_cc865d30_20250220_162938.jpg"]}], "displayName": "13 <게임 방법을 이해해요>"}, {"kicker": "3. 글자 블럭 게임", "title": "<연습 게임>", "kind": "topic", "blocks": [{"type": "heading", "text": "<연습 게임>"}, {"type": "text", "text": "답이 O일 때, 머리 위로 동그라미를 해요. 연습해 볼까요? 답이 X일 때, 머리 위로 엑스를 해요. 연습해 볼까요? 참 잘했어요. 그럼, 연습 게임을 해봐요."}, {"type": "text", "text": "그림을 잘 보고, 단어가 맞다면 머리 위로 O를, 틀리다면 머리 위로 X를 표시하세요."}, {"type": "text", "text": "선생님이 정답을 말해요. → 정답은 바로 X 예요. ‘무’는 틀린 글자예요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/022_fb16a7a6_까무귀.jpg"}, {"type": "text", "text": "‘무’ 대신 어떤 글자가 필요한가요? 미니레고판에 올바른 글자를 만든 후, 판을 머리 위로 들어보세요. 답이 O라면, 바로 스티커를 획득할 수 있어요."}, {"type": "text", "text": "올바른 글자를 만든 친구는, ‘마’ 스티커를 떼서 교재에 붙이세요."}], "displayName": "14 <연습 게임>"}, {"kicker": "3. 글자 블럭 게임", "title": "<본 게임>", "kind": "topic", "blocks": [{"type": "heading", "text": "<본 게임>"}, {"type": "text", "text": "본격적으로 게임을 진행해요. 답이 O라면, 바로 스티커를 획득해요. 답이 X라면, 미니 레고판에 올바른 글자를 만든 후 스티커를 획득해요. 답변을 입력하지 않고 ‘화살표’만 눌러도 다음 문제로 넘길 수 있어요."}, {"type": "text", "text": "게임을 마친 후, 획득한 글자 스티커의 개수를 교재에 적어요."}, {"type": "h5p", "src": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2008", "title": "인터랙티브 #2008"}], "displayName": "15 <본 게임>"}, {"kicker": "4. 수업 마무리", "title": "4. 수업 마무리", "kind": "quiz", "blocks": [{"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/023_aaba6d51_활동을정리해요_파랑.jpg"}, {"type": "text", "text": "오늘은 자음 ‘ㅁ’ 과 모음 ‘ㅏ, ㅓ, ㅣ’ 가 만난 글자인 ‘마, 머, 미’ 를 배웠어요,. 글자블럭으로 단어도 만들고, 글자의 힘을 되찾기 위한 OX 퀴즈 게임도 해보았어요."}, {"type": "text", "text": "오늘 수업에 대한 친구들의 생각을 말해주세요."}, {"type": "image", "src": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/024_c448dddf_크기변환자산-23.jpg"}, {"type": "quiz", "question": "오늘 수업은 즐거웠나요?", "options": ["네", "아니요"]}, {"type": "quiz", "question": "오늘 활동의 난이도는 어땠나요?", "options": ["쉬웠어요.", "보통이에요.", "어려웠어요."]}, {"type": "quiz", "question": "어떤 활동이 재미있었나요?", "options": ["블럭으로 단어 만들기", "O, X 퀴즈"]}], "displayName": "16 4. 수업 마무리"}], "stages": [{"label": "차시 안내", "displayName": "01 차시 안내", "type": "intro", "title": "18차시. 마, 머, 미를 배워요", "bubble": "[플라팜] 한글 글자블럭, 미니레고판, 6세 5호 교재", "teacherTalk": "오늘 수업 목표와 준비물을 안내하세요.", "resources": [], "image": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/001_fb626355_상품구성_5호.png"}, {"label": "1. 탐색 활동", "displayName": "02 1. 탐색 활동", "type": "discussion", "title": "1. 탐색 활동", "bubble": "글자블럭으로 한글을 즐겁게 배우는 <손끝에서 만나는 한글> 열여덟 번째 수업이에요.", "teacherTalk": "「1. 탐색 활동」내용을 함께 살펴보세요.", "resources": [], "image": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/004_4607266a_교구활동1_수정.jpg", "discussionPages": [{"bubble": "글자블럭으로 한글을 즐겁게 배우는 <손끝에서 만나는 한글> 열여덟 번째 수업이에요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "지난 시간에는 산타 마을에서 사라진 장난감을 되찾고, 내가 받고 싶은 선물을 블럭으로 만들어보았어요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "오늘은 글자 ‘마, 머, 미’ 를 배우고, 그 글자가 들어간 단어를 알아볼 거예요. 그리고 재밌는 낱말 판 게임을 통해 ‘마, 머, 미’ 의 힘도 되찾을 거예요. 오늘 수업도 기대되지요?", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "힘차게 시작해 볼까요!", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "교재, 한글 글자블럭을 준비해주세요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "어둠의 힘에게 빼앗긴 ‘마, 머, 미’의 힘을 되찾기 위해선 특별한 블럭이 필요해요. 활동을 통해, 오늘 우리에게 필요한 블럭을 찾아보도록 해요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "퀴즈를 풀어요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "한글 글자블럭 중에서 ‘ㅁ’ 블럭 5개를 찾아보세요. 빨강, 노랑, 초록, 파랑, 흰색 ‘ㅁ’ 블럭이에요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "모두 찾았다면, 한 켠에 ‘ㅁ’ 블럭을 모아두세요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "이번에는 우리에게 필요한 모음 블럭을 찾아보도록 해요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "한글 글자블럭 중에서 ‘ㅏ, ㅓ, ㅣ’ 블럭 5개씩 찾아보세요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "교재 5p를 펼친 후, 우리가 찾은 블럭을 알맞은 그림 위에 올려놓으세요.", "teacherTalk": "아이 응답을 들어주세요."}]}, {"label": "1. 탐색 활동 · 영상1", "displayName": "03 1. 탐색 활동 · 영상1", "type": "video", "title": "1. 탐색 활동 · 영상1", "bubble": "준비된 친구들은 영상을 플레이 해주세요.", "teacherTalk": "인터랙티브 활동을 함께 진행하세요.", "resources": [], "videoUrl": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2036"}, {"label": "1. 탐색 활동 · 영상2", "displayName": "04 1. 탐색 활동 · 영상2", "type": "video", "title": "1. 탐색 활동 · 영상2", "bubble": "준비된 친구들은 영상을 플레이 해주세요.", "teacherTalk": "인터랙티브 활동을 함께 진행하세요.", "resources": [], "videoUrl": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2006"}, {"label": "2. 글자 학습", "displayName": "05 2. 글자 학습", "type": "discussion", "title": "2. 글자 학습", "bubble": "교재, 한글 글자블럭, 미니레고판을 준비해주세요.", "teacherTalk": "「2. 글자 학습」내용을 함께 살펴보세요.", "resources": [], "image": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/007_9cf36aea_활동하기_수정.jpg", "discussionPages": [{"bubble": "교재, 한글 글자블럭, 미니레고판을 준비해주세요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "‘ㅁ’과 ‘ㅏ’가 만나면 글자 ‘마’ 가 돼요. 우리 친구들도 글자 ‘마’ 를 만들어 볼까요?", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "교재 6p을 펼쳐요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "왼쪽에 ‘ㅁ’ 블럭을, 오른쪽에 ‘ㅏ’ 블럭을 올려 놓아요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "‘ㅁ’블럭과 ‘ㅏ’블럭을 가운데로 모아서 글자 ‘마’를 완성해요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "그림의 단어를 말하면서 블럭 글자를 잘 보고, ‘마’를 만들어 보세요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "→ 그림을 보고 어떤 단어일지 말해보세요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "→ 엄마의 ‘마’.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "따라 말해보세요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "4장의 단어 카드가 있어요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "그림과 단어를 잘 보고, 문제를 풀어보세요.", "teacherTalk": "아이 응답을 들어주세요."}, {"bubble": "교재 7p의 단어를 여러 번 읽어보세요.", "teacherTalk": "아이 응답을 들어주세요."}]}, {"label": "2. 글자 학습 · 영상1", "displayName": "06 2. 글자 학습 · 영상1", "type": "video", "title": "2. 글자 학습 · 영상1", "bubble": "준비된 친구들은 영상을 플레이 해주세요.", "teacherTalk": "인터랙티브 활동을 함께 진행하세요.", "resources": [], "videoUrl": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2204"}, {"label": "2. 글자 학습 · 영상2", "displayName": "07 2. 글자 학습 · 영상2", "type": "video", "title": "2. 글자 학습 · 영상2", "bubble": "준비된 친구들은 영상을 플레이 해주세요.", "teacherTalk": "인터랙티브 활동을 함께 진행하세요.", "resources": [], "videoUrl": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2201"}, {"label": "2. 글자 학습 · 영상3", "displayName": "08 2. 글자 학습 · 영상3", "type": "video", "title": "2. 글자 학습 · 영상3", "bubble": "준비된 친구들은 영상을 플레이 해주세요.", "teacherTalk": "인터랙티브 활동을 함께 진행하세요.", "resources": [], "videoUrl": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2205"}, {"label": "3. 글자 블럭 게임", "displayName": "09 3. 글자 블럭 게임", "type": "play", "title": "3. 글자 블럭 게임", "bubble": "교재, 한글 글자블럭, 미니레고판, 스티커, 색연필을 준비해주세요.", "teacherTalk": "배운 내용을 응용하고 게임을 진행하세요.", "resources": [], "image": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/007_9cf36aea_활동하기_수정.jpg", "playPages": [{"title": "교재 12p를 펼쳐 보세요", "bubble": "교재 12p를 펼쳐 보세요.", "image": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/018_4f7f50d7_게임활동1_수정-e1667367856630.jpg", "hideGuide": true, "steps": ["어떤 그림이 있나요?", "→ 그래요. 선물상자, 양발, 그리고 회색 보석이 있어요. OX퀴즈의 답을 맞히면, 교재에 스티커를 붙여서 글자의 힘을 모을 수 있어요.", "답이 O일 때, 머리 위로 동그라미를 해요. 연습해 볼까요?", "답이 X일 때, 머리 위로 엑스를 해요. 연습해 볼까요?", "참 잘했어요. 그럼, 연습 게임을 해봐요.", "그림을 잘 보고, 단어가 맞다면 머리 위로 O를, 틀리다면 머리 위로 X를 표시하세요."], "teacherTalk": "「교재 12p를 펼쳐 보세요」활동을 진행하세요.", "materials": []}]}, {"label": "3. 글자 블럭 게임", "displayName": "10 3. 글자 블럭 게임", "type": "video", "title": "3. 글자 블럭 게임", "bubble": "준비된 친구들은 영상을 플레이 해주세요.", "teacherTalk": "인터랙티브 활동을 함께 진행하세요.", "resources": [], "videoUrl": "https://crayonschool.co.kr/wp-admin/admin-ajax.php?action=h5p_embed&id=2008"}, {"label": "4. 수업 마무리", "displayName": "11 4. 수업 마무리", "type": "closing", "title": "4. 수업 마무리", "bubble": "오늘은 자음 ‘ㅁ’ 과 모음 ‘ㅏ, ㅓ, ㅣ’ 가 만난 글자인 ‘마, 머, 미’ 를 배웠어요,. 글자블럭으로 단어도 만들고, 글자의 힘을 되찾기 위한 OX 퀴즈 게임도 해보았어요.", "teacherTalk": "오늘 활동을 회상한 뒤 생각을 나누고 마무리하세요.", "resources": [], "image": "https://raw.githubusercontent.com/ABE0402/Lesson-Plan-Generator/cursor/batch-all-lessons-gyoan-eec6/lessons/previews/18차시-마-머-미를-배워요/assets/images/023_aaba6d51_활동을정리해요_파랑.jpg", "closingPages": [{"displayName": "11 회상하기", "title": "오늘 정말 잘했어요!", "bubble": "오늘은 자음 ‘ㅁ’ 과 모음 ‘ㅏ, ㅓ, ㅣ’ 가 만난 글자인 ‘마, 머, 미’ 를 배웠어요,. 글자블럭으로 단어도 만들고, 글자의 힘을 되찾기 위한 OX 퀴즈 게임도 해보았어요.", "teacherTalk": "오늘 한 활동을 짧게 회상하게 하세요.", "isClosingFinale": true}, {"displayName": "11 평가하기", "title": "오늘 수업은 즐거웠나요?", "bubble": "오늘 수업에 대한 생각을 말해주세요.", "quiz": {"question": "오늘 수업은 즐거웠나요?", "options": ["네", "아니요"], "correctIndex": 0, "correctFeedback": "고마워요! 생각을 말해줘서 좋아요.", "wrongFeedback": "고마워요! 생각을 말해줘서 좋아요."}, "teacherTalk": "응답을 확인하세요."}, {"displayName": "11 평가하기", "title": "오늘 활동의 난이도는 어땠나요?", "bubble": "오늘 활동의 난이도는 어땠나요?", "quiz": {"question": "오늘 활동의 난이도는 어땠나요?", "options": ["쉬웠어요.", "보통이에요.", "어려웠어요."], "correctIndex": 0, "correctFeedback": "고마워요! 생각을 말해줘서 좋아요.", "wrongFeedback": "고마워요! 생각을 말해줘서 좋아요."}, "teacherTalk": "응답을 확인하세요."}, {"displayName": "11 평가하기", "title": "어떤 활동이 재미있었나요?", "bubble": "어떤 활동이 재미있었나요?", "quiz": {"question": "어떤 활동이 재미있었나요?", "options": ["블럭으로 단어 만들기", "O, X 퀴즈"], "correctIndex": 0, "correctFeedback": "고마워요! 생각을 말해줘서 좋아요.", "wrongFeedback": "고마워요! 생각을 말해줘서 좋아요."}, "teacherTalk": "응답을 확인하세요."}, {"displayName": "11 Bye!", "title": "다음 시간에 또 만나요", "bubble": "오늘 수업에 열심히 참여한 친구들, 고마워요!\n그럼 다음 시간에 또 만나요.", "teacherTalk": "가정연계를 안내하며 마무리합니다.", "isClosingFinale": true, "homework": "부모님·친구들과 오늘 배운 활동을 다시 해보세요."}], "homework": "부모님·친구들과 오늘 배운 활동을 다시 해보세요."}]};
+    let index = 0;
+    let sourcePages = [];
+    let pages = [];
+    let reflowTimer = null;
+    let reflowing = false;
+    let reflowQueued = false;
+
+    function loadSourcePages(data) {
+      if (data.pages && data.pages.length) return JSON.parse(JSON.stringify(data.pages));
+      return legacyFromStages(data);
+    }
+
+    function legacyFromStages(data) {
+      const out = [];
+      (data.stages || []).forEach((s) => {
+        const blocks = [];
+        if (s.bubble) blocks.push({ type: "text", text: s.bubble });
+        if (s.image) blocks.push({ type: "image", src: s.image });
+        (s.images || []).forEach((src) => blocks.push({ type: "image", src }));
+        if (s.videoUrl) blocks.push({ type: "h5p", src: s.videoUrl, title: s.title || "영상" });
+        (s.discussionPages || []).forEach((p) => {
+          if (p.bubble) blocks.push({ type: "text", text: p.bubble });
+          if (p.image) blocks.push({ type: "image", src: p.image });
+        });
+        (s.playPages || []).forEach((p) => {
+          if (p.title) blocks.push({ type: "heading", text: p.title });
+          if (p.bubble) blocks.push({ type: "text", text: p.bubble });
+          (p.steps || []).forEach((t) => blocks.push({ type: "text", text: t }));
+          if (p.image) blocks.push({ type: "image", src: p.image });
+        });
+        (s.closingPages || []).forEach((p) => {
+          if (p.bubble) blocks.push({ type: "text", text: p.bubble });
+          if (p.quiz) blocks.push({ type: "quiz", question: p.quiz.question, options: p.quiz.options || [] });
+        });
+        out.push({
+          kicker: s.displayName || s.label,
+          title: s.title || s.label,
+          blocks,
+        });
+      });
+      return out;
+    }
+
+    function esc(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderBlocks(blocks, tight) {
+      const root = document.getElementById("blocks");
+      root.innerHTML = "";
+      (blocks || []).forEach((b) => {
+        const t = b.type;
+        const align = ["left", "center", "right"].includes(b.align)
+          ? b.align
+          : (t === "image" || t === "gallery" || t === "h5p" ? "center" : "left");
+        const size = ["sm", "md", "lg"].includes(b.size) ? b.size : "md";
+        if (t === "heading") {
+          const el = document.createElement("h2");
+          el.className = `blk-heading align-${align}`;
+          el.textContent = b.text || "";
+          root.appendChild(el);
+        } else if (t === "text") {
+          const el = document.createElement("p");
+          el.className = `blk-text align-${align}`;
+          el.textContent = b.text || "";
+          root.appendChild(el);
+        } else if (t === "image" && b.src) {
+          const wrap = document.createElement("div");
+          wrap.className = `blk-image size-${size} align-${align}` + (tight ? " tight" : "");
+          wrap.innerHTML = `<img src="${esc(b.src)}" alt="">`;
+          root.appendChild(wrap);
+        } else if (t === "gallery" && b.srcs && b.srcs.length) {
+          const wrap = document.createElement("div");
+          wrap.className = `blk-gallery align-${align}`;
+          wrap.innerHTML = b.srcs.map((src) => `<img src="${esc(src)}" alt="">`).join("");
+          root.appendChild(wrap);
+        } else if (t === "h5p" && b.src) {
+          const wrap = document.createElement("div");
+          wrap.className = `blk-h5p size-${size} align-${align}`;
+          wrap.innerHTML = `
+            <div class="label">${esc(b.title || "인터랙티브")}</div>
+            <iframe src="${esc(b.src)}" allowfullscreen title="${esc(b.title || "H5P")}"></iframe>`;
+          root.appendChild(wrap);
+        } else if (t === "divider") {
+          const el = document.createElement("div");
+          el.className = "blk-divider";
+          root.appendChild(el);
+        } else if (t === "quiz") {
+          const wrap = document.createElement("div");
+          wrap.className = "quiz";
+          const opts = (b.options || []).map((o, i) =>
+            `<button type="button" data-i="${i}">${esc(o)}</button>`
+          ).join("");
+          wrap.innerHTML = `<h3>${esc(b.question || "질문")}</h3><div class="opts">${opts}</div>`;
+          wrap.querySelectorAll("button").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              wrap.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+              btn.classList.add("on");
+            });
+          });
+          root.appendChild(wrap);
+        }
+      });
+    }
+
+    function overflows() {
+      const el = document.getElementById("scroll");
+      return el.scrollHeight > el.clientHeight + 2;
+    }
+
+    function waitImages(root) {
+      const imgs = Array.from(root.querySelectorAll("img"));
+      if (!imgs.length) return Promise.resolve();
+      return Promise.all(
+        imgs.map((img) => {
+          if (img.complete && img.naturalWidth) return Promise.resolve();
+          return new Promise((resolve) => {
+            const done = () => resolve();
+            img.addEventListener("load", done, { once: true });
+            img.addEventListener("error", done, { once: true });
+            setTimeout(done, 2500);
+          });
+        })
+      );
+    }
+
+    function probe(srcPage, blocks, tight) {
+      document.getElementById("kicker").textContent = srcPage.kicker || srcPage.displayName || "";
+      document.getElementById("heading").textContent = srcPage.title || "";
+      renderBlocks(blocks, tight);
+    }
+
+    async function packSourcePage(srcPage) {
+      const queue = [...(srcPage.blocks || [])];
+      const out = [];
+      if (!queue.length) {
+        out.push({
+          kicker: srcPage.kicker,
+          title: srcPage.title,
+          displayName: srcPage.displayName,
+          kind: srcPage.kind,
+          blocks: [],
+        });
+        return out;
+      }
+
+      while (queue.length) {
+        const chunk = [];
+        while (queue.length) {
+          chunk.push(queue[0]);
+          probe(srcPage, chunk, false);
+          await waitImages(document.getElementById("blocks"));
+          if (overflows()) {
+            chunk.pop();
+            if (!chunk.length) {
+              // 한 블록이 화면보다 큼 → 단독 페이지 + 타이트 이미지
+              chunk.push(queue.shift());
+              probe(srcPage, chunk, true);
+              await waitImages(document.getElementById("blocks"));
+            }
+            break;
+          }
+          queue.shift();
+        }
+        out.push({
+          kicker: srcPage.kicker,
+          title: srcPage.title,
+          displayName: srcPage.displayName,
+          kind: srcPage.kind,
+          blocks: chunk.slice(),
+        });
+      }
+      return out;
+    }
+
+    async function reflowPages() {
+      if (reflowing) {
+        reflowQueued = true;
+        return;
+      }
+      reflowing = true;
+      const keepId = (pages[index] && (pages[index].displayName || pages[index].title)) || "";
+      try {
+        const fitted = [];
+        for (const src of sourcePages) {
+          const parts = await packSourcePage(src);
+          fitted.push(...parts);
+        }
+        // 연속 분할된 같은 원본 페이지에 번호 보강
+        let n = 0;
+        pages = fitted.map((p) => {
+          n += 1;
+          return {
+            ...p,
+            displayName: p.displayName || `${String(n).padStart(2, "0")} ${p.title || ""}`,
+          };
+        });
+        if (!pages.length) {
+          pages = [{ kicker: "", title: lessonData.title || "", blocks: [] }];
+        }
+        // 이전 위치 유지 시도
+        let next = index;
+        if (keepId) {
+          const found = pages.findIndex(
+            (p) => p.displayName === keepId || p.title === keepId
+          );
+          if (found >= 0) next = found;
+        }
+        index = Math.max(0, Math.min(next, pages.length - 1));
+        render();
+        notifyReflow();
+      } finally {
+        reflowing = false;
+        if (reflowQueued) {
+          reflowQueued = false;
+          scheduleReflow();
+        }
+      }
+    }
+
+    function scheduleReflow() {
+      if (reflowTimer) clearTimeout(reflowTimer);
+      reflowTimer = setTimeout(() => reflowPages(), 120);
+    }
+
+    function notifyParent() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "crayon-page-change", pageIndex: index }, "*");
+        }
+      } catch (_e) { /* ignore */ }
+    }
+
+    /** 편집기는 플레이어 HTML이 나눈 페이지 구성을 그대로 따른다 */
+    function notifyReflow() {
+      try {
+        if (!window.parent || window.parent === window) return;
+        window.parent.postMessage(
+          {
+            type: "crayon-reflow",
+            pageIndex: index,
+            pages: pages.map((p) => ({
+              kicker: p.kicker || "",
+              title: p.title || "",
+              displayName: p.displayName || "",
+              kind: p.kind || "topic",
+              blocks: JSON.parse(JSON.stringify(p.blocks || [])),
+            })),
+          },
+          "*"
+        );
+      } catch (_e) { /* ignore */ }
+    }
+
+    function go(delta) {
+      const next = index + delta;
+      if (next < 0 || next >= pages.length) return;
+      index = next;
+      render();
+    }
+
+    function render() {
+      const page = pages[index] || { title: "", blocks: [] };
+      document.getElementById("lessonTitle").textContent = lessonData.title || "크레용 디지털 교안";
+      document.getElementById("lessonLevel").textContent = lessonData.level || "";
+      document.getElementById("kicker").textContent = page.kicker || page.displayName || "";
+      document.getElementById("heading").textContent = page.title || "";
+      document.getElementById("pagePill").textContent = `${index + 1} / ${pages.length}`;
+      document.getElementById("hitPrev").disabled = index <= 0;
+      document.getElementById("hitNext").disabled = index >= pages.length - 1;
+      const tip = lessonData.sourceUrl
+        ? `원본: ${lessonData.sourceUrl}\n좌우 화살표 또는 키보드 ← →`
+        : "좌우 화살표 또는 키보드 ← →";
+      document.getElementById("teacherText").textContent = tip;
+      renderBlocks(page.blocks || [], false);
+      notifyParent();
+    }
+
+    function applyLessonUpdate(payload) {
+      if (payload && payload.lesson) {
+        lessonData = payload.lesson;
+        sourcePages = loadSourcePages(lessonData);
+      }
+      if (payload && typeof payload.pageIndex === "number") {
+        index = Math.max(0, payload.pageIndex);
+      }
+      scheduleReflow();
+    }
+
+    window.addEventListener("message", (e) => {
+      if (!e.data || e.data.type !== "crayon-lesson-update") return;
+      applyLessonUpdate(e.data);
+    });
+
+    document.getElementById("hitPrev").onclick = () => go(-1);
+    document.getElementById("hitNext").onclick = () => go(1);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+    });
+
+    document.getElementById("teacherBtn").onclick = () => {
+      document.getElementById("teacher").hidden = false;
+    };
+    document.getElementById("closeTeacher").onclick = () => {
+      document.getElementById("teacher").hidden = true;
+    };
+    document.getElementById("teacher").addEventListener("click", (e) => {
+      if (e.target.id === "teacher") e.currentTarget.hidden = true;
+    });
+
+    window.addEventListener("resize", scheduleReflow);
+
+    sourcePages = loadSourcePages(lessonData);
+    pages = sourcePages.slice();
+    render();
+    reflowPages();
+  </script>
+</body>
+</html>
