@@ -21,7 +21,7 @@ app = Flask(
     static_folder=str(ROOT / "static"),
 )
 
-SAMPLE_CARD = ROOT / "lessons" / "지혜큐브_1차시" / "수업카드.txt"
+SAMPLE_CARD = ROOT / "lessons" / "_양식" / "수업카드_빈양식.txt"
 
 
 def build_html(lesson_data: dict, shell: str = "block") -> str:
