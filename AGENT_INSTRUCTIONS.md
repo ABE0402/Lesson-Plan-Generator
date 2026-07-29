@@ -2,7 +2,9 @@
 
 실무자가 크레용스쿨 **차시 링크** 또는 **링크가 모인 엑셀**을 주면 아래만 수행한다.
 
-**산출물 = 블록형 HTML (`preview.html`) + 이미지 assets (GitHub Raw 절대 URL).**  
+**산출물 = 블록형 HTML (`<차시제목>.html`) + 이미지 assets (GitHub Raw 절대 URL).**  
+파일명은 `preview.html`이 아니라 차시 제목이다.  
+예: `3차시-고-구-그를-배워요.html`  
 PR만 주고 끝내지 마라.
 
 ## 입력 (둘 중 하나)
@@ -41,7 +43,7 @@ python batch_preview.py --xlsx '8월 사용 교안.xlsx' --course '플라팜'
 python batch_preview.py --xlsx '8월 사용 교안.xlsx' --limit 10
 ```
 
-스크립트가 JSON으로 성공·실패·Raw URL을 출력한다.  
+스크립트가 JSON으로 성공·실패·Raw URL·`htmlFile`(제목 파일명)을 출력한다.  
 **한 번에 15개 초과**면 `--limit`으로 나눠 돌리고, 실패 건은 재시도한다.
 
 변경분(생성된 `lessons/previews/<slug>/` 포함)을 **커밋·푸시**한 뒤, 답변 **맨 위**:
@@ -50,8 +52,9 @@ python batch_preview.py --xlsx '8월 사용 교안.xlsx' --limit 10
 
 ```text
 ✅ 미리보기 HTML (이미지=GitHub Raw, H5P=원본 embed 유지)
-Raw: https://github.com/ABE0402/Lesson-Plan-Generator/raw/main/lessons/previews/<slug>/preview.html
-Blob: https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/lessons/previews/<slug>/preview.html
+파일: 3차시-고-구-그를-배워요.html
+Raw: https://github.com/ABE0402/Lesson-Plan-Generator/raw/main/lessons/previews/<slug>/<차시제목>.html
+Blob: https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/lessons/previews/<slug>/<차시제목>.html
 ```
 
 ### 일괄 답변 형식
@@ -59,9 +62,9 @@ Blob: https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/lessons/preview
 ```text
 ✅ 미리보기 N건 완료 / 실패 M건
 
-| 차시 | Raw |
-|------|-----|
-| (title) | https://github.com/ABE0402/Lesson-Plan-Generator/raw/main/lessons/previews/<slug>/preview.html |
+| 차시 | 파일 | Raw |
+|------|------|-----|
+| (title) | (htmlFile) | https://github.com/.../lessons/previews/<slug>/<차시제목>.html |
 
 실패:
 - (url) — (error)
@@ -76,5 +79,6 @@ Blob: https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/lessons/preview
 - 차시 문장 창작
 - 이미지를 상대경로만 넣고 Raw로 열게 하기 (깨짐)
 - 엑셀을 받았는데 첫 링크 1개만 변환하고 끝내기 (필터/limit 지시가 없으면 **수집된 URL 전부**)
+- 산출물 파일명을 `preview.html`로 남기기
 
 편집은 Azure/로컬 **`/edit`** 에서 한다. 이 단계에서는 HTML Raw 링크를 반드시 준다.

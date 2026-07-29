@@ -43,9 +43,10 @@ def build_html(lesson_data: dict, shell: str = "block") -> str:
 
 
 def safe_filename(title: str) -> str:
-    name = re.sub(r'[\\/:*?"<>|]+', "_", title or "lesson")
-    name = re.sub(r"\s+", "_", name).strip("._")
-    return (name[:60] or "lesson") + "_미리보기.html"
+    """브라우저 다운로드·표시용 파일명 (차시 제목 기반)."""
+    from offline_images import preview_html_name
+
+    return preview_html_name(title)
 
 
 def require_editor_token(view):
@@ -158,11 +159,12 @@ def api_convert():
         return jsonify({"ok": False, "error": "현재는 crayonschool.co.kr 레슨 링크만 지원합니다."}), 400
 
     try:
-        from offline_images import offline_lesson_data, github_raw_url
+        from offline_images import offline_lesson_data, github_raw_url, preview_html_name
 
         lesson_data = convert_lesson(url)
         cleaned = ws.normalize_lesson(lesson_data)
         slug = ws.slugify(cleaned.get("title") or "lesson")
+        html_name = preview_html_name(cleaned.get("title") or slug)
         folder = ROOT / "lessons" / "previews" / slug
         prefix = f"lessons/previews/{slug}"
         image_note = ""
@@ -171,11 +173,17 @@ def api_convert():
             image_note = "이미지를 GitHub Raw URL로 저장함"
         html = build_html(cleaned)
         folder.mkdir(parents=True, exist_ok=True)
-        (folder / "preview.html").write_text(html, encoding="utf-8")
+        (folder / html_name).write_text(html, encoding="utf-8")
+        legacy = folder / "preview.html"
+        if legacy.exists() and legacy.name != html_name:
+            try:
+                legacy.unlink()
+            except OSError:
+                pass
     except Exception as exc:  # noqa: BLE001
         return jsonify({"ok": False, "error": f"변환 실패: {exc}"}), 500
 
-    filename = safe_filename(lesson_data.get("title", "lesson")).replace("_미리보기", "")
+    filename = safe_filename(cleaned.get("title") or "lesson")
     return jsonify(
         {
             "ok": True,
@@ -186,8 +194,8 @@ def api_convert():
             "filename": filename,
             "html": html,
             "imageNote": image_note,
-            "previewPath": f"lessons/previews/{slug}/preview.html",
-            "rawUrl": github_raw_url(f"{prefix}/preview.html"),
+            "previewPath": f"lessons/previews/{slug}/{html_name}",
+            "rawUrl": github_raw_url(f"{prefix}/{html_name}"),
             "lessonData": cleaned,
         }
     )
@@ -251,6 +259,7 @@ def api_lessons_import():
             "slug": slug,
             "lesson": saved,
             "previewUrl": f"/w/{slug}/preview",
+            "rawHtml": raw if raw else None,
         }
     )
 
@@ -281,6 +290,8 @@ def api_import_default_preview():
                         "lesson": saved,
                         "previewUrl": f"/w/{slug}/preview",
                         "source": str(path),
+                        # 원본 파일은 디스크에서 읽기만 — 편집기는 이 HTML을 그대로 왼쪽에 씀
+                        "rawHtml": raw,
                     }
                 )
             except Exception as exc:  # noqa: BLE001
@@ -378,10 +389,7 @@ def api_lesson_download(slug: str):
         ws.lesson_dir(slug),
         "preview.html",
         as_attachment=True,
-        download_name=safe_filename(
-            (ws.load_lesson(slug) or {}).get("title") or slug
-        ).replace("_미리보기", "")
-        + "_미리보기.html",
+        download_name=safe_filename((ws.load_lesson(slug) or {}).get("title") or slug),
     )
 
 

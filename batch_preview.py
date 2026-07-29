@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""단일 URL 또는 엑셀(링크 열) → lessons/previews/<slug>/preview.html."""
+"""단일 URL 또는 엑셀(링크 열) → lessons/previews/<slug>/<차시제목>.html."""
 from __future__ import annotations
 
 import argparse
@@ -11,17 +11,12 @@ from typing import Any
 from urllib.parse import urlparse
 
 from converter import convert_lesson
-from offline_images import github_raw_url, offline_lesson_data
+from offline_images import github_raw_url, lesson_slug, offline_lesson_data, preview_html_name
 import app
 
 ROOT = Path(__file__).resolve().parent
 PREVIEWS = ROOT / "lessons" / "previews"
 URL_RE = re.compile(r"https?://(?:www\.)?crayonschool\.co\.kr/lessons/[^\s\"'<>]+", re.I)
-
-
-def slugify(title: str) -> str:
-    s = re.sub(r"[^\w\-가-힣]+", "-", (title or "lesson").strip()).strip("-")
-    return (s[:40] or "lesson")
 
 
 def normalize_url(url: str) -> str:
@@ -73,14 +68,21 @@ def build_one(url: str) -> dict[str, Any]:
     try:
         data = convert_lesson(url)
         title = data.get("title") or "lesson"
-        slug = slugify(title)
+        slug = lesson_slug(title)
+        html_name = preview_html_name(title)
         folder = PREVIEWS / slug
         folder.mkdir(parents=True, exist_ok=True)
         prefix = f"lessons/previews/{slug}"
         data = offline_lesson_data(data, folder, repo_prefix=prefix)
         html = app.build_html(data)
-        out = folder / "preview.html"
+        out = folder / html_name
         out.write_text(html, encoding="utf-8")
+        legacy = folder / "preview.html"
+        if legacy.exists() and legacy.resolve() != out.resolve():
+            try:
+                legacy.unlink()
+            except OSError:
+                pass
         (folder / "meta.json").write_text(
             json.dumps(
                 {
@@ -90,22 +92,24 @@ def build_one(url: str) -> dict[str, Any]:
                     "mode": data.get("mode"),
                     "pageCount": len(data.get("pages") or []),
                     "imagesOffline": True,
+                    "htmlFile": html_name,
                 },
                 ensure_ascii=False,
                 indent=2,
             ),
             encoding="utf-8",
         )
-        raw = github_raw_url(prefix + "/preview.html")
+        raw = github_raw_url(f"{prefix}/{html_name}")
         blob = (
             "https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/"
-            f"{prefix}/preview.html"
+            f"{prefix}/{html_name}"
         )
         return {
             "ok": True,
             "url": url,
             "title": title,
             "slug": slug,
+            "htmlFile": html_name,
             "path": out.as_posix(),
             "raw": raw,
             "blob": blob,

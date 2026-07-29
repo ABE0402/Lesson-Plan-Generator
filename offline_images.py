@@ -42,6 +42,18 @@ def github_raw_url(repo_relative: str) -> str:
     )
 
 
+def lesson_slug(title: str, *, max_len: int = 60) -> str:
+    """차시 제목 → 폴더/파일용 안전한 이름 (예: 3차시-고-구-그를-배워요)."""
+    s = re.sub(r"[^\w\-가-힣]+", "-", (title or "lesson").strip(), flags=re.UNICODE)
+    s = re.sub(r"-{2,}", "-", s).strip("-")
+    return (s[:max_len] or "lesson")
+
+
+def preview_html_name(title: str) -> str:
+    """다운로드/GitHub에 보이는 HTML 파일명 (preview.html 대신 제목 사용)."""
+    return f"{lesson_slug(title)}.html"
+
+
 def extract_lesson_from_html(html: str) -> dict[str, Any] | None:
     m = LESSON_ASSIGN_RE.search(html)
     if not m:
@@ -212,11 +224,12 @@ def offline_preview_html(
     repo_prefix: str | None = None,
 ) -> dict[str, Any]:
     """
-    preview.html → out_dir/preview.html + assets/images/*
+    입력 HTML → out_dir/<차시제목>.html + assets/images/*
     이미지 src는 GitHub Raw 절대 URL로 치환.
     """
     html = html_path.read_text(encoding="utf-8")
     lesson = extract_lesson_from_html(html)
+    html_name = preview_html_name((lesson or {}).get("title") or out_dir.name)
     urls = collect_image_urls(lesson) if lesson else []
     # HTML에만 있는 URL도 보강
     for u in collect_urls_from_html_text(html):
@@ -254,11 +267,20 @@ def offline_preview_html(
             encoding="utf-8",
         )
 
-    (out_dir / "preview.html").write_text(new_html, encoding="utf-8")
+    out_html = out_dir / html_name
+    out_html.write_text(new_html, encoding="utf-8")
+    # 예전 preview.html 이 남아 있으면 혼동 방지
+    legacy = out_dir / "preview.html"
+    if legacy.exists() and legacy.resolve() != out_html.resolve():
+        try:
+            legacy.unlink()
+        except OSError:
+            pass
     (out_dir / "assets" / "manifest.json").write_text(
         json.dumps(
             {
                 "githubRawBase": github_raw_url(prefix),
+                "htmlFile": html_name,
                 "mapping": absolute_map,
                 "failed": [u for u in urls if u not in file_map],
             },
@@ -272,8 +294,9 @@ def offline_preview_html(
         "outDir": str(out_dir),
         "imageCount": len(file_map),
         "failed": [u for u in urls if u not in file_map],
-        "preview": str(out_dir / "preview.html"),
-        "rawPreview": github_raw_url(f"{prefix}/preview.html"),
+        "preview": str(out_html),
+        "htmlFile": html_name,
+        "rawPreview": github_raw_url(f"{prefix}/{html_name}"),
     }
 
 
