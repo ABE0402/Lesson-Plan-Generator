@@ -61,6 +61,23 @@ def urls_from_xlsx(path: Path) -> list[str]:
     return found
 
 
+def urls_from_text_file(path: Path, *, course: str = "") -> list[str]:
+    """CSV/텍스트에서 crayonschool lessons URL 수집. course면 같은 줄에 강좌명 포함 시만."""
+    raw = path.read_text(encoding="utf-8-sig")
+    needle = (course or "").strip().lower()
+    found: list[str] = []
+    seen: set[str] = set()
+    for line in raw.splitlines():
+        if needle and needle not in line.lower():
+            continue
+        for m in URL_RE.findall(line):
+            u = normalize_url(m)
+            if u and u not in seen:
+                seen.add(u)
+                found.append(u)
+    return found
+
+
 def build_one(url: str) -> dict[str, Any]:
     url = normalize_url(url)
     if not url:
@@ -120,10 +137,11 @@ def build_one(url: str) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description="교안 preview 단건/엑셀 일괄 생성")
+    p = argparse.ArgumentParser(description="교안 preview 단건/엑셀·CSV 일괄 생성")
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--url", help="크레용스쿨 차시 URL 1개")
     g.add_argument("--xlsx", type=Path, help="링크가 들어 있는 엑셀 파일")
+    g.add_argument("--csv", type=Path, help="링크가 들어 있는 CSV 파일")
     g.add_argument("--urls-file", type=Path, help="URL 한 줄씩 텍스트 파일")
     p.add_argument(
         "--limit",
@@ -134,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--course",
         default="",
-        help="엑셀일 때 강좌명 부분 일치 필터(선택)",
+        help="강좌명 부분 일치 필터(선택)",
     )
     args = p.parse_args(argv)
 
@@ -146,7 +164,6 @@ def main(argv: list[str] | None = None) -> int:
         if not path.exists():
             print(json.dumps({"ok": False, "error": f"파일 없음: {path}"}, ensure_ascii=False))
             return 1
-        # 강좌 필터: openpyxl로 행 단위 재스캔
         if args.course:
             import openpyxl
 
@@ -166,12 +183,18 @@ def main(argv: list[str] | None = None) -> int:
                                 urls.append(u)
         else:
             urls = urls_from_xlsx(path)
+    elif args.csv:
+        path = args.csv if args.csv.is_absolute() else (Path.cwd() / args.csv)
+        if not path.exists():
+            print(json.dumps({"ok": False, "error": f"파일 없음: {path}"}, ensure_ascii=False))
+            return 1
+        urls = urls_from_text_file(path, course=args.course)
     else:
         path = args.urls_file if args.urls_file.is_absolute() else (Path.cwd() / args.urls_file)
-        for line in path.read_text(encoding="utf-8").splitlines():
-            u = normalize_url(line.split("#", 1)[0].strip())
-            if u:
-                urls.append(u)
+        if not path.exists():
+            print(json.dumps({"ok": False, "error": f"파일 없음: {path}"}, ensure_ascii=False))
+            return 1
+        urls = urls_from_text_file(path, course=args.course)
 
     if args.limit and args.limit > 0:
         urls = urls[: args.limit]

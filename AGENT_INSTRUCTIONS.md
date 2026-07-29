@@ -1,6 +1,9 @@
 # Cursor 에이전트 지시 (Teams / Cloud)
 
-실무자가 크레용스쿨 **차시 링크** 또는 **링크가 모인 엑셀**을 주면 아래만 수행한다.
+실무자가 크레용스쿨 **차시 링크** 또는 **레포 안의 링크 목록(CSV/엑셀)** 을 주면 아래만 수행한다.
+
+**중요:** Teams 채팅 첨부·PC 로컬 경로(`Downloads` 등)는 클라우드 워크스페이스에 **안 들어온다.**  
+일괄 변환은 **이 GitHub 레포에 커밋된 파일**만 사용한다.
 
 **산출물 = 블록형 HTML (`<차시제목>.html`) + 이미지 assets (GitHub Raw 절대 URL).**  
 파일명은 `preview.html`이 아니라 차시 제목이다.  
@@ -10,15 +13,16 @@ PR만 주고 끝내지 마라.
 ## 입력 (둘 중 하나)
 
 ### A) 단건
-- `https://crayonschool.co.kr/lessons/...` URL **1개**
+- `https://crayonschool.co.kr/lessons/...` URL **1개** (채팅에 붙여도 됨)
 
-### B) 엑셀 일괄
-- `.xlsx` 파일 (예: `8월 사용 교안.xlsx`)
-- 시트 안 어디에든 `crayonschool.co.kr/lessons/...` 링크가 있으면 수집
-- (선택) 실무자가 “지혜큐브만”, “플라팜만”처럼 **강좌 필터**를 말하면 `--course`로 좁힌다
-- (선택) “앞에서 5개만” 등이면 `--limit N`
+### B) 레포 CSV/엑셀 일괄
+- 기본 목록: `lessons/8월_사용_교안.csv`
+- 또는 레포에 있는 다른 `.csv` / `.xlsx`
+- (선택) “지혜큐브만”, “플라팜만” → `--course`
+- (선택) “앞에서 5개만” → `--limit N`
 
-(선택) H5P embed URL 목록 — 있으면 참고만, 보통 링크만으로 수집됨
+채팅에만 파일을 첨부했다고 해서 변환을 중단하거나, 이전 런 트랜스크립트를 뒤지지 마라.  
+파일이 없으면 **`lessons/8월_사용_교안.csv`가 있는지 먼저 확인**하고, 없으면 실무자에게 “레포에 CSV를 올려 달라”고 짧게 안내한다.
 
 ## 할 일
 
@@ -32,18 +36,21 @@ pip install -r requirements.txt
 python batch_preview.py --url 'PASTE_URL_HERE'
 ```
 
-### B) 엑셀
+### B) CSV (권장)
 
 ```bash
-# 첨부/워크스페이스에 있는 엑셀 경로로 교체
-python batch_preview.py --xlsx '8월 사용 교안.xlsx'
-
-# 강좌만 / 개수 제한 예시
-python batch_preview.py --xlsx '8월 사용 교안.xlsx' --course '플라팜'
-python batch_preview.py --xlsx '8월 사용 교안.xlsx' --limit 10
+python batch_preview.py --csv 'lessons/8월_사용_교안.csv'
+python batch_preview.py --csv 'lessons/8월_사용_교안.csv' --course '플라팜'
+python batch_preview.py --csv 'lessons/8월_사용_교안.csv' --limit 10
 ```
 
-스크립트가 JSON으로 성공·실패·Raw URL·`htmlFile`(제목 파일명)을 출력한다.  
+### B') 엑셀 (레포에 있을 때만)
+
+```bash
+python batch_preview.py --xlsx 'lessons/파일명.xlsx'
+```
+
+스크립트가 JSON으로 성공·실패·Raw URL·`htmlFile`을 출력한다.  
 **한 번에 15개 초과**면 `--limit`으로 나눠 돌리고, 실패 건은 재시도한다.
 
 변경분(생성된 `lessons/previews/<slug>/` 포함)을 **커밋·푸시**한 뒤, 답변 **맨 위**:
@@ -70,7 +77,7 @@ Blob: https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/lessons/preview
 - (url) — (error)
 ```
 
-실무자는 **Raw HTML 링크만** 연다. 이미지 src는 `raw.githubusercontent.com/...` 절대경로라서 Raw로 열어도 보인다.
+실무자는 **Raw HTML 링크만** 연다.
 
 ## 하지 말 것
 
@@ -78,7 +85,8 @@ Blob: https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/lessons/preview
 - localhost 스크린샷만 주고 HTML 링크 생략
 - 차시 문장 창작
 - 이미지를 상대경로만 넣고 Raw로 열게 하기 (깨짐)
-- 엑셀을 받았는데 첫 링크 1개만 변환하고 끝내기 (필터/limit 지시가 없으면 **수집된 URL 전부**)
+- 채팅 첨부가 안 보인다고 이전 에이전트 기록만 길게 탐색하기
+- 필터/limit 없이 목록을 받았는데 첫 링크 1개만 변환하고 끝내기
 - 산출물 파일명을 `preview.html`로 남기기
 
 편집은 Azure/로컬 **`/edit`** 에서 한다. 이 단계에서는 HTML Raw 링크를 반드시 준다.
