@@ -161,7 +161,23 @@
       border-bottom: 1px solid var(--line);
       font-size: 0.85rem;
       color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
+    .blk-h5p .label-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .blk-h5p .label-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .blk-h5p .label-actions button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #faf6ef;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .blk-h5p .label-actions button:hover { background: #ffe8d2; border-color: var(--accent); }
     .blk-h5p iframe {
       width: 100%;
       height: min(32dvh, 360px);
@@ -169,6 +185,13 @@
       border: 0;
       display: block;
       background: #fff;
+    }
+    .blk-h5p iframe:fullscreen,
+    .blk-h5p iframe:-webkit-full-screen {
+      width: 100vw;
+      height: 100vh;
+      max-height: none;
+      min-height: 0;
     }
     .blk-h5p.size-sm iframe { height: min(24dvh, 260px); min-height: 180px; }
     .blk-h5p.size-md iframe { height: min(32dvh, 360px); min-height: 220px; }
@@ -364,8 +387,18 @@
           const wrap = document.createElement("div");
           wrap.className = `blk-h5p size-${size} align-${align}`;
           wrap.innerHTML = `
-            <div class="label">${esc(b.title || "인터랙티브")}</div>
-            <iframe src="${esc(b.src)}" allowfullscreen title="${esc(b.title || "H5P")}"></iframe>`;
+            <div class="label">
+              <span class="label-title">${esc(b.title || "인터랙티브")}</span>
+              <span class="label-actions">
+                <button type="button" data-h5p-open title="새 탭에서 열기">새 창</button>
+              </span>
+            </div>
+            <iframe src="${esc(b.src)}" allow="fullscreen *; autoplay *; encrypted-media *" referrerpolicy="strict-origin-when-cross-origin" title="${esc(b.title || "H5P")}"></iframe>`;
+          wrap.querySelector("[data-h5p-open]")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.open(b.src, "_blank", "noopener,noreferrer");
+          });
           root.appendChild(wrap);
         } else if (t === "divider") {
           const el = document.createElement("div");
@@ -555,10 +588,12 @@
       document.getElementById("pagePill").textContent = `${index + 1} / ${pages.length}`;
       document.getElementById("hitPrev").disabled = index <= 0;
       document.getElementById("hitNext").disabled = index >= pages.length - 1;
-      const tip = lessonData.sourceUrl
+      const pageTip = (page.teacherTip || "").trim();
+      const lessonTip = (lessonData.teacherTip || "").trim();
+      const fallback = lessonData.sourceUrl
         ? `원본: ${lessonData.sourceUrl}\n좌우 화살표 또는 키보드 ← →`
         : "좌우 화살표 또는 키보드 ← →";
-      document.getElementById("teacherText").textContent = tip;
+      document.getElementById("teacherText").textContent = pageTip || lessonTip || fallback;
       renderBlocks(page.blocks || [], false);
       notifyParent();
     }

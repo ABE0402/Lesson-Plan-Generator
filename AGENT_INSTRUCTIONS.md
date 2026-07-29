@@ -89,4 +89,7 @@ Blob: https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/lessons/preview
 - 필터/limit 없이 목록을 받았는데 첫 링크 1개만 변환하고 끝내기
 - 산출물 파일명을 `preview.html`로 남기기
 
-편집은 Azure/로컬 **`/edit`** 에서 한다. 이 단계에서는 HTML Raw 링크를 반드시 준다.
+편집(`/edit`)은 **Lesson-Editor** 레포에서 한다. 이 Generator 레포·Teams Cursor는 변환만 한다.  
+이 단계에서는 HTML Raw 링크를 반드시 준다.
+
+`block_shell.html`을 고치면 Editor 쪽에서 `python scripts/sync_player.py`로 맞춰야 한다.
