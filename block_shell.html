@@ -15,7 +15,7 @@
       --sky: #3a7ca5;
     }
     * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
     body {
       color: var(--ink);
       font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
@@ -34,9 +34,9 @@
       height: 100%;
       max-height: 100%;
       margin: 0 auto;
-      padding: 8px 0 12px;
+      padding: 8px 0 10px;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-rows: auto minmax(0, 1fr);
       gap: 8px;
     }
     .top {
@@ -70,6 +70,7 @@
     }
 
     .stage {
+      position: relative;
       min-height: 0;
       border-radius: 20px;
       border: 1px solid rgba(255,255,255,0.9);
@@ -82,8 +83,8 @@
     .page-scroll {
       flex: 1;
       min-height: 0;
-      overflow: auto;
-      padding: 20px 22px 28px;
+      overflow: hidden; /* 스크롤 금지 — 넘치면 페이지 분할 */
+      padding: 20px 22px 24px;
     }
     .kicker {
       color: var(--accent-deep);
@@ -93,13 +94,13 @@
       margin-bottom: 4px;
     }
     h1 {
-      margin: 0 0 16px;
+      margin: 0 0 14px;
       font-size: clamp(1.15rem, 2.2vw, 1.55rem);
       line-height: 1.35;
     }
-    .blocks { display: flex; flex-direction: column; gap: 14px; }
+    .blocks { display: flex; flex-direction: column; gap: 12px; }
     .blk-heading {
-      margin: 8px 0 0;
+      margin: 6px 0 0;
       font-size: 1.05rem;
       color: var(--sky);
       font-weight: 800;
@@ -107,7 +108,7 @@
     .blk-text {
       margin: 0;
       font-size: 1rem;
-      line-height: 1.65;
+      line-height: 1.6;
       white-space: pre-wrap;
     }
     .blk-image, .blk-gallery {
@@ -118,11 +119,12 @@
     }
     .blk-image img {
       width: 100%;
-      max-height: min(52dvh, 520px);
+      max-height: min(42dvh, 440px);
       object-fit: contain;
       margin: 0 auto;
       background: #fff;
     }
+    .blk-image.tight img { max-height: min(32dvh, 320px); }
     .blk-gallery {
       display: grid;
       gap: 8px;
@@ -151,7 +153,7 @@
     }
     .blk-h5p iframe {
       width: 100%;
-      min-height: min(62dvh, 640px);
+      min-height: min(48dvh, 520px);
       border: 0;
       display: block;
       background: #fff;
@@ -177,37 +179,20 @@
     }
     .opts button.on { background: #ffe8d2; border-color: var(--accent); }
 
-    .bottom {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 4px 2px;
+    /* 좌우 클릭 이동 영역 */
+    .nav-hit {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 20%;
+      z-index: 6;
+      border: 0;
+      padding: 0;
+      background: transparent;
     }
-    .nav-btn {
-      border-radius: 999px;
-      padding: 10px 16px;
-      background: #fff;
-      border: 1px solid var(--line);
-      font-weight: 700;
-    }
-    .nav-btn.primary {
-      background: linear-gradient(180deg, var(--accent), var(--accent-deep));
-      color: #fff;
-      border-color: transparent;
-    }
-    .dots {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-      justify-content: center;
-      max-width: 50%;
-    }
-    .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: #d2c6b6;
-    }
-    .dot.on { background: var(--accent); transform: scale(1.25); }
+    .nav-hit.prev { left: 0; cursor: w-resize; }
+    .nav-hit.next { right: 0; cursor: e-resize; }
+    .nav-hit:disabled { cursor: default; }
 
     .teacher {
       position: fixed; inset: 0; background: rgba(20,16,12,0.35);
@@ -224,9 +209,9 @@
     .teacher p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
 
     @media (max-width: 720px) {
-      .page-scroll { padding: 16px 14px 22px; }
+      .page-scroll { padding: 16px 14px 20px; }
       .blk-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .dots { display: none; }
+      .nav-hit { width: 24%; }
     }
   </style>
 </head>
@@ -243,12 +228,14 @@
       </div>
     </header>
 
-    <section class="stage">
+    <section class="stage" id="stage">
       <div class="page-scroll" id="scroll">
         <div class="kicker" id="kicker"></div>
         <h1 id="heading"></h1>
         <div class="blocks" id="blocks"></div>
       </div>
+      <button type="button" class="nav-hit prev" id="hitPrev" aria-label="이전 페이지"></button>
+      <button type="button" class="nav-hit next" id="hitNext" aria-label="다음 페이지"></button>
     </section>
 
     <div class="teacher" id="teacher" hidden>
@@ -257,27 +244,25 @@
           <h2>교사용</h2>
           <button class="ghost" id="closeTeacher" type="button">닫기</button>
         </div>
-        <p id="teacherText">원본 순서대로 블록을 보여 줍니다. 필요하면 원본 링크를 함께 보세요.</p>
+        <p id="teacherText">화면 왼쪽을 누르면 이전, 오른쪽을 누르면 다음 페이지입니다.</p>
       </div>
     </div>
-
-    <footer class="bottom">
-      <button class="nav-btn" id="prevBtn" type="button">← 이전</button>
-      <div class="dots" id="dots"></div>
-      <button class="nav-btn primary" id="nextBtn" type="button">다음 →</button>
-    </footer>
   </div>
 
   <script>
     let lessonData = __LESSON_DATA__;
     let index = 0;
+    let sourcePages = [];
+    let pages = [];
+    let reflowTimer = null;
+    let reflowing = false;
 
-    let pages = (lessonData.pages && lessonData.pages.length)
-      ? lessonData.pages
-      : legacyFromStages(lessonData);
+    function loadSourcePages(data) {
+      if (data.pages && data.pages.length) return JSON.parse(JSON.stringify(data.pages));
+      return legacyFromStages(data);
+    }
 
     function legacyFromStages(data) {
-      /* 카드 경로 등 stages만 있을 때 최소 변환 */
       const out = [];
       (data.stages || []).forEach((s) => {
         const blocks = [];
@@ -316,7 +301,7 @@
         .replace(/"/g, "&quot;");
     }
 
-    function renderBlocks(blocks) {
+    function renderBlocks(blocks, tight) {
       const root = document.getElementById("blocks");
       root.innerHTML = "";
       (blocks || []).forEach((b) => {
@@ -333,7 +318,7 @@
           root.appendChild(el);
         } else if (t === "image" && b.src) {
           const wrap = document.createElement("div");
-          wrap.className = "blk-image";
+          wrap.className = "blk-image" + (tight ? " tight" : "");
           wrap.innerHTML = `<img src="${esc(b.src)}" alt="">`;
           root.appendChild(wrap);
         } else if (t === "gallery" && b.srcs && b.srcs.length) {
@@ -360,7 +345,8 @@
           ).join("");
           wrap.innerHTML = `<h3>${esc(b.question || "질문")}</h3><div class="opts">${opts}</div>`;
           wrap.querySelectorAll("button").forEach((btn) => {
-            btn.addEventListener("click", () => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
               wrap.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
               btn.classList.add("on");
             });
@@ -368,6 +354,118 @@
           root.appendChild(wrap);
         }
       });
+    }
+
+    function overflows() {
+      const el = document.getElementById("scroll");
+      return el.scrollHeight > el.clientHeight + 2;
+    }
+
+    function waitImages(root) {
+      const imgs = Array.from(root.querySelectorAll("img"));
+      if (!imgs.length) return Promise.resolve();
+      return Promise.all(
+        imgs.map((img) => {
+          if (img.complete && img.naturalWidth) return Promise.resolve();
+          return new Promise((resolve) => {
+            const done = () => resolve();
+            img.addEventListener("load", done, { once: true });
+            img.addEventListener("error", done, { once: true });
+            setTimeout(done, 2500);
+          });
+        })
+      );
+    }
+
+    function probe(srcPage, blocks, tight) {
+      document.getElementById("kicker").textContent = srcPage.kicker || srcPage.displayName || "";
+      document.getElementById("heading").textContent = srcPage.title || "";
+      renderBlocks(blocks, tight);
+    }
+
+    async function packSourcePage(srcPage) {
+      const queue = [...(srcPage.blocks || [])];
+      const out = [];
+      if (!queue.length) {
+        out.push({
+          kicker: srcPage.kicker,
+          title: srcPage.title,
+          displayName: srcPage.displayName,
+          kind: srcPage.kind,
+          blocks: [],
+        });
+        return out;
+      }
+
+      while (queue.length) {
+        const chunk = [];
+        while (queue.length) {
+          chunk.push(queue[0]);
+          probe(srcPage, chunk, false);
+          await waitImages(document.getElementById("blocks"));
+          if (overflows()) {
+            chunk.pop();
+            if (!chunk.length) {
+              // 한 블록이 화면보다 큼 → 단독 페이지 + 타이트 이미지
+              chunk.push(queue.shift());
+              probe(srcPage, chunk, true);
+              await waitImages(document.getElementById("blocks"));
+            }
+            break;
+          }
+          queue.shift();
+        }
+        out.push({
+          kicker: srcPage.kicker,
+          title: srcPage.title,
+          displayName: srcPage.displayName,
+          kind: srcPage.kind,
+          blocks: chunk.slice(),
+        });
+      }
+      return out;
+    }
+
+    async function reflowPages() {
+      if (reflowing) return;
+      reflowing = true;
+      const keepId = (pages[index] && (pages[index].displayName || pages[index].title)) || "";
+      try {
+        const fitted = [];
+        for (const src of sourcePages) {
+          const parts = await packSourcePage(src);
+          fitted.push(...parts);
+        }
+        // 연속 분할된 같은 원본 페이지에 번호 보강
+        let n = 0;
+        pages = fitted.map((p) => {
+          n += 1;
+          return {
+            ...p,
+            displayName: p.displayName || `${String(n).padStart(2, "0")} ${p.title || ""}`,
+          };
+        });
+        if (!pages.length) {
+          pages = [{ kicker: "", title: lessonData.title || "", blocks: [] }];
+        }
+        // 이전 위치 유지 시도
+        let next = index;
+        if (keepId) {
+          const found = pages.findIndex(
+            (p) => p.displayName === keepId || p.title === keepId
+          );
+          if (found >= 0) next = found;
+        }
+        index = Math.max(0, Math.min(next, pages.length - 1));
+        render();
+      } finally {
+        reflowing = false;
+      }
+    }
+
+    function scheduleReflow() {
+      if (reflowTimer) clearTimeout(reflowTimer);
+      reflowTimer = setTimeout(() => reflowPages(), 120);
     }
 
     function notifyParent() {
@@ -378,43 +476,39 @@
       } catch (_e) { /* ignore */ }
     }
 
-    function render(opts) {
-      const keepScroll = opts && opts.keepScroll;
-      const scrollEl = document.getElementById("scroll");
-      const prevScroll = keepScroll ? scrollEl.scrollTop : 0;
+    function go(delta) {
+      const next = index + delta;
+      if (next < 0 || next >= pages.length) return;
+      index = next;
+      render();
+    }
+
+    function render() {
       const page = pages[index] || { title: "", blocks: [] };
       document.getElementById("lessonTitle").textContent = lessonData.title || "크레용 디지털 교안";
       document.getElementById("lessonLevel").textContent = lessonData.level || "";
       document.getElementById("kicker").textContent = page.kicker || page.displayName || "";
       document.getElementById("heading").textContent = page.title || "";
       document.getElementById("pagePill").textContent = `${index + 1} / ${pages.length}`;
-      document.getElementById("prevBtn").disabled = index <= 0;
-      document.getElementById("nextBtn").disabled = index >= pages.length - 1;
+      document.getElementById("hitPrev").disabled = index <= 0;
+      document.getElementById("hitNext").disabled = index >= pages.length - 1;
       const tip = lessonData.sourceUrl
-        ? `원본: ${lessonData.sourceUrl}`
-        : "원본 링크가 없습니다.";
+        ? `원본: ${lessonData.sourceUrl}\n왼쪽 클릭=이전, 오른쪽 클릭=다음`
+        : "왼쪽 클릭=이전, 오른쪽 클릭=다음";
       document.getElementById("teacherText").textContent = tip;
-      renderBlocks(page.blocks || []);
-      scrollEl.scrollTop = keepScroll ? prevScroll : 0;
-
-      const dots = document.getElementById("dots");
-      dots.innerHTML = pages.map((_, i) =>
-        `<span class="dot${i === index ? " on" : ""}"></span>`
-      ).join("");
+      renderBlocks(page.blocks || [], false);
       notifyParent();
     }
 
     function applyLessonUpdate(payload) {
       if (payload && payload.lesson) {
         lessonData = payload.lesson;
-        pages = (lessonData.pages && lessonData.pages.length)
-          ? lessonData.pages
-          : legacyFromStages(lessonData);
+        sourcePages = loadSourcePages(lessonData);
       }
       if (payload && typeof payload.pageIndex === "number") {
-        index = Math.max(0, Math.min(payload.pageIndex, Math.max(pages.length - 1, 0)));
+        index = Math.max(0, payload.pageIndex);
       }
-      render({ keepScroll: true });
+      scheduleReflow();
     }
 
     window.addEventListener("message", (e) => {
@@ -422,8 +516,13 @@
       applyLessonUpdate(e.data);
     });
 
-    document.getElementById("prevBtn").onclick = () => { if (index > 0) { index -= 1; render(); } };
-    document.getElementById("nextBtn").onclick = () => { if (index < pages.length - 1) { index += 1; render(); } };
+    document.getElementById("hitPrev").onclick = () => go(-1);
+    document.getElementById("hitNext").onclick = () => go(1);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+    });
+
     document.getElementById("teacherBtn").onclick = () => {
       document.getElementById("teacher").hidden = false;
     };
@@ -434,7 +533,12 @@
       if (e.target.id === "teacher") e.currentTarget.hidden = true;
     });
 
+    window.addEventListener("resize", scheduleReflow);
+
+    sourcePages = loadSourcePages(lessonData);
+    pages = sourcePages.slice();
     render();
+    reflowPages();
   </script>
 </body>
 </html>
