@@ -6,9 +6,9 @@
 
 ## 운영 흐름 (권장)
 
-1. 실무자가 Teams에 **차시 링크**를 올린다. (H5P iframe 복붙은 선택)
-2. `@Cursor`가 `convert_lesson` → 이미지 다운로드 → **GitHub Raw 절대 URL**로 치환 → `preview.html` 생성
-3. 답변 맨 위에 `preview.html` Raw 다운로드 링크를 준다. (실무자는 Raw만 연다)
+1. 실무자가 Teams에 **차시 링크 1개** 또는 **링크가 모인 엑셀(.xlsx)** 을 올린다.
+2. `@Cursor`가 `batch_preview.py`로 변환(이미지 다운로드 → **GitHub Raw 절대 URL**) → `preview.html` 생성
+3. 답변 맨 위에 Raw 링크(단건) 또는 목록(일괄)을 준다. (실무자는 Raw만 연다)
 4. 이미지는 `lessons/previews/<slug>/assets/images/`에 커밋되어 원본 사이트와 무관하게 표시된다. H5P embed는 당분간 원본 유지.
 
 에이전트 지시: `AGENT_INSTRUCTIONS.md`  
