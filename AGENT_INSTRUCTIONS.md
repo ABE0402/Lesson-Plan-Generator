@@ -53,7 +53,16 @@ python batch_preview.py --xlsx 'lessons/파일명.xlsx'
 스크립트가 JSON으로 성공·실패·Raw URL·`htmlFile`을 출력한다.  
 **한 번에 15개 초과**면 `--limit`으로 나눠 돌리고, 실패 건은 재시도한다.
 
-변경분(생성된 `lessons/previews/<slug>/` 포함)을 **커밋·푸시**한 뒤, 답변 **맨 위**:
+### 배포 (Raw 404 방지 — 필수)
+
+생성된 `lessons/previews/<slug>/` 를 **`main`에 올린 뒤에만** Raw 링크를 준다.
+
+1. **가능하면 `main`에 직접 커밋·푸시**한다. (에이전트 브랜치만 남기고 PR만 열면 실무자 Raw는 404가 난다.)
+2. 브랜치/PR로만 작업했다면 **`main`에 머지·푸시가 끝난 뒤**에만 답한다.
+3. Raw URL의 브랜치는 반드시 **`main`** 이다. 파일이 `main`에 없는데 `/main/...` 링크를 만들지 마라.
+4. 답변 전에 한 건이라도 Raw URL을 열어(또는 `curl -I`) **200**인지 확인한다. 404면 푸시/머지부터 고친다.
+
+그다음 답변 **맨 위**:
 
 ### 단건 답변 형식
 
@@ -88,8 +97,10 @@ Blob: https://github.com/ABE0402/Lesson-Plan-Generator/blob/main/lessons/preview
 - 채팅 첨부가 안 보인다고 이전 에이전트 기록만 길게 탐색하기
 - 필터/limit 없이 목록을 받았는데 첫 링크 1개만 변환하고 끝내기
 - 산출물 파일명을 `preview.html`로 남기기
+- PR/에이전트 브랜치에만 올리고 **`main` Raw 링크를 먼저 주기** (실무자 404)
+- “커밋했다”고만 하고 `main` 푸시·머지·Raw 200 확인을 생략하기
 
 편집(`/edit`)은 **Lesson-Editor** 레포에서 한다. 이 Generator 레포·Teams Cursor는 변환만 한다.  
-이 단계에서는 HTML Raw 링크를 반드시 준다.
+이 단계에서는 **`main`에 올라간** HTML Raw 링크를 반드시 준다.
 
 `block_shell.html`을 고치면 Editor 쪽에서 `python scripts/sync_player.py`로 맞춰야 한다.
